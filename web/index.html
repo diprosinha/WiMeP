@@ -289,7 +289,7 @@ python wimep.py predict --species rufipogon --input my_seqs.fasta --out predicti
 
 <footer><div>
   <span>WiMeP · DNA 5mC prediction for crop wild relatives</span>
-  <span>Sinha D, Ghosh S, Sarkar A, Bhattacharjee S, Guha Majumdar S, Murmu S</span>
+  <span>Sinha D, Ghosh S, Sarkar A, Bhattacharjee S, Guha Majumdar S, Chaurasia H, Murmu S</span>
 </div></footer>
 
 <script>
@@ -316,6 +316,7 @@ const PEOPLE = [
   ["Abhik Sarkar", "Ph.D. Scholar", "Discipline of Bioinformatics, ICAR–Indian Agricultural Research Institute, Pusa, New Delhi 110012, India", ""],
   ["Sougata Bhattacharjee", "Scientist", "School of Crop Sciences, ICAR–Indian Agricultural Research Institute, Jharkhand, Hazaribagh, India", ""],
   ["Sayanti Guha Majumdar", "Scientist", "ICAR–Indian Sugarcane Research Institute, Lucknow, India", "https://scholar.google.com/citations?user=wjAkz68AAAAJ&hl=en"],
+  ["Himanshushekhar Chaurasia", "Scientist", "Computer Applications and IT, Indian Council of Agricultural Research (ICAR), India", "https://scholar.google.com/citations?user=4XtHugQAAAAJ&hl=en"],
   ["Sneha Murmu", "Scientist", "Division of Agricultural Bioinformatics, ICAR–Indian Agricultural Statistics Research Institute, Pusa, New Delhi 110012, India", ""]];
 $("people").innerHTML = PEOPLE.map(([n, r, a, s]) => `<div class="card person"><div class="avatar" aria-hidden="true">${n.split(" ").filter((w, i, x) => i === 0 || i === x.length - 1).map(w => w[0]).join("")}</div>
   <div><h3>${esc(n)}</h3><div class="role">${esc(r)}</div><div class="aff">${esc(a)}</div>${s ? `<a href="${s}" target="_blank" rel="noopener">Google Scholar</a>` : ""}</div></div>`).join("");

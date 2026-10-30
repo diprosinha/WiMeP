@@ -57,7 +57,7 @@ The server handles one prediction at a time and has no TLS; for public hosting, 
 (e.g. nginx or Caddy) that provides HTTPS. The Developers page is in `web/index.html`.
 
 ## Authors
-Dipro Sinha, Subham Ghosh, Abhik Sarkar, Sougata Bhattacharjee, Sayanti Guha Majumdar, Sneha Murmu
+Dipro Sinha, Subham Ghosh, Abhik Sarkar, Sougata Bhattacharjee, Sayanti Guha Majumdar, Himanshushekhar Chaurasia, Sneha Murmu
 
 ## Models
 Per species, the ensemble combines five models, with weights chosen to minimise log-loss on the validation set:
