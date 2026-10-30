@@ -23,10 +23,10 @@ python wildepipred.py predict --species tauschii  --input example/Aegilops_tausc
 |---|---|
 | `--species` | `rufipogon` or `tauschii` |
 | `--input` | FASTA, or CSV with a `sequence` column (optional `seq_id`) |
-| `--mode` | `site`: each sequence is a 41-bp window with the candidate C at position 21. `scan`: every C on both strands of longer sequences is scored (20 bp flank needed on each side). `auto` (default): `site` if all sequences are 41 bp with C at position 21, otherwise `scan` |
+| `--mode` | `site`: each sequence is a 41-bp window with the candidate C at position 21. `scan`: each sequence (at least 41 bp) is divided into overlapping 41-bp windows with a sliding step of 1 bp, and every window centred on a cytosine (C, or G = C on the opposite strand, reverse-complemented) is scored; windows centred on A or T are skipped. `auto` (default): `site` if all sequences are 41 bp with C at position 21, otherwise `scan`. Sequences shorter than 41 bp are skipped (command line) or rejected (web server). |
 | `--threshold` | probability cut-off for calling 5mC (default 0.5) |
 
-Output CSV columns: `seq_id`, `position` (1-based on the input sequence; for `-` strand cytosines this is the position of the G), `strand`, `context` (CG/CHG/CHH),
+Output CSV columns: `seq_id`, `position` (1-based on the input sequence; for `-` strand cytosines this is the position of the G), `strand`, `context` (CG/CHG/CHH), `window_start` and `window_end` (1-based coordinates of the 41-bp window on the input sequence),
 `window` (41 bp, read 5'→3' on the cytosine's strand), the probability from each model, `prob_5mC` (ensemble) and `prediction`.
 
 ## Web server

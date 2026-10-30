@@ -6,7 +6,8 @@ DNABERT features), fine-tuned DNABERT-6 and a DNABERT-BiLSTM. 5mC = CG, CHG and 
 
 Input: FASTA (or CSV with a `sequence` column).
   site mode  every sequence is a 41-bp window with the candidate C at position 21
-  scan mode  every C on both strands of longer sequences is scored (20 bp flank each side required)
+  scan mode  sequences of >= 41 bp are cut into overlapping 41-bp windows (step 1 bp); every window centred on a
+             cytosine (C, or G = C on the opposite strand) is scored
   auto       site mode if all sequences are 41 bp with C at position 21, otherwise scan mode
 
 usage:
@@ -59,7 +60,12 @@ def read_input(text_or_path):
 
 
 def windows(df, mode="auto"):
-    """41-bp candidate windows: seq_id, position (1-based, of the C on the given strand's forward coordinate), strand, context, window."""
+    """41-bp windows centred on a cytosine.
+
+    site mode: each sequence is one 41-bp window with C at position 21.
+    scan mode: the sequence (>= 41 bp) is cut into overlapping 41-bp windows with a step of 1 bp; every window whose
+    centre is C (cytosine on the given strand) or G (cytosine on the opposite strand, window reverse-complemented)
+    is scored. Columns: seq_id, position (1-based centre), strand, context, window_start, window_end, window."""
     is_site = (df.sequence.str.len() == 41) & (df.sequence.str[HALF] == "C")
     if mode == "auto": mode = "site" if is_site.all() else "scan"
     rows = []
@@ -68,7 +74,7 @@ def windows(df, mode="auto"):
             if len(r.sequence) != 41 or r.sequence[HALF] != "C":
                 raise ValueError(f"{r.seq_id}: each sequence must be 41 bp with C at position 21 (got {len(r.sequence)} bp)")
             if re.fullmatch("[ACGT]+", r.sequence):
-                rows.append((r.seq_id, 21, "+", context(r.sequence), r.sequence))
+                rows.append((r.seq_id, 21, "+", context(r.sequence), 1, 41, r.sequence))
     else:
         for r in df.itertuples():
             s = r.sequence
@@ -77,8 +83,8 @@ def windows(df, mode="auto"):
                 w = s[i - HALF:i + HALF + 1]
                 if s[i] == "G": w = w.translate(COMP)[::-1]
                 if re.fullmatch("[ACGT]+", w):
-                    rows.append((r.seq_id, i + 1, "+" if s[i] == "C" else "-", context(w), w))
-    return pd.DataFrame(rows, columns=["seq_id", "position", "strand", "context", "window"]), mode
+                    rows.append((r.seq_id, i + 1, "+" if s[i] == "C" else "-", context(w), i - HALF + 1, i + HALF + 1, w))
+    return pd.DataFrame(rows, columns=["seq_id", "position", "strand", "context", "window_start", "window_end", "window"]), mode
 
 
 # ---------------------------------------------------------------- models
@@ -179,12 +185,16 @@ def serve(host, port):
         df = read_input(req.get("sequences", "").strip() or ">")
         df = df[df.sequence != ""]
         if df.empty: raise ValueError("no sequence given")
+        short = df[df.sequence.str.len() < 41]
+        if len(short):
+            raise ValueError("each sequence must be at least 41 bp; too short: " +
+                             ", ".join(f"{r.seq_id} ({len(r.sequence)} bp)" for r in short.head(5).itertuples()) + (" ..." if len(short) > 5 else ""))
         if df.sequence.str.len().sum() > MAX_WEB_BP:
             raise ValueError(f"web input is limited to {MAX_WEB_BP:,} bp; use the command-line tool for larger inputs")
         out = {}
         for s in (SPECIES if sp == "both" else [sp]):
             with lock: res, mode = predict(df, s, req.get("mode", "auto"), float(req.get("threshold", 0.5)))
-            if res.empty: raise ValueError("no cytosine could be scored: each C needs 20 bp of A/C/G/T on both sides")
+            if res.empty: raise ValueError("no window could be scored: no 41-bp window has a cytosine (C, or G on the opposite strand) at its centre with only A/C/G/T around it")
             out[s] = dict(species=SPECIES[s].replace("_", " "), mode=mode, n=len(res), n_5mC=int((res.prediction == "5mC").sum()),
                           columns=list(res.columns), rows=res.values.tolist(), csv=res.to_csv(index=False))
         seqs = {r.seq_id: r.sequence for r in df.itertuples()}
@@ -241,7 +251,9 @@ def main():
     a = ap.parse_args()
     if a.cmd == "serve": return serve(a.host, a.port)
     if not os.path.exists(a.input): sys.exit(f"input not found: {a.input}")
-    res, mode = predict(read_input(a.input), a.species, a.mode, a.threshold)
+    df = read_input(a.input); short = (df.sequence.str.len() < 41).sum()
+    if short: print(f"warning: {short} sequence(s) shorter than 41 bp skipped", file=sys.stderr)
+    res, mode = predict(df[df.sequence.str.len() >= 41], a.species, a.mode, a.threshold)
     res.to_csv(a.out, index=False)
     print(f"{mode} mode: {len(res)} cytosines scored, {(res.prediction == '5mC').sum()} predicted 5mC -> {a.out}")
 

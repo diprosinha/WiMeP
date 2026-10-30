@@ -177,9 +177,9 @@ footer div { max-width: 1120px; margin: 0 auto; padding: 20px 16px 28px; display
   <div class="card">
     <h2>Instructions for users</h2>
     <ol class="steps">
-      <li><b>Prepare input.</b> Each sequence must be <b>41 bp</b> (A, C, G, T) with the cytosine to be scored at position 21, in FASTA or as plain sequence.</li>
+      <li><b>Prepare input.</b> FASTA or plain sequence (A, C, G, T) of <b>at least 41 bp</b>. A 41-bp sequence with C at position 21 is scored as one site. Longer sequences are cut into overlapping 41-bp windows with a step of 1 bp, and every window whose centre is a cytosine (C, or G for the opposite strand) is scored.</li>
       <li><b>Choose the model:</b> <i class="sp">O. rufipogon</i>, <i class="sp">Ae. tauschii</i> or both.</li>
-      <li><b>Run prediction.</b> Results show each sequence's context (CG/CHG/CHH), the probability from each model and the ensemble call. Download them as CSV.</li>
+      <li><b>Run prediction.</b> Results show each scored cytosine's position, strand, context (CG/CHG/CHH), window coordinates, the probability from each model and the ensemble call; longer sequences also get a probability track and a sequence view. Download the results as CSV.</li>
     </ol>
   </div>
 
@@ -188,7 +188,7 @@ footer div { max-width: 1120px; margin: 0 auto; padding: 20px 16px 28px; display
 <!-- ============================================================ PREDICT -->
 <section class="page" id="page-predict">
   <h1>5mC prediction</h1>
-  <p class="lead">Upload a FASTA file or paste sequences. Each sequence must be 41 bp with the cytosine to be scored at position 21.</p>
+  <p class="lead">Upload a FASTA file or paste sequences of at least 41 bp. A 41-bp sequence with C at position 21 is scored as one site; any other sequence is cut into overlapping 41-bp windows (step 1 bp), and every window centred on a cytosine is scored.</p>
 
   <div class="card">
     <div class="seg" role="group" aria-label="Input type">
@@ -204,7 +204,7 @@ footer div { max-width: 1120px; margin: 0 auto; padding: 20px 16px 28px; display
       <div class="drop" id="drop" tabindex="0">Drop a FASTA file here or <u>choose a file</u><br><span class="small" id="fname"></span></div>
       <input type="file" id="file" accept=".fasta,.fa,.fna,.fas,.txt" hidden>
     </div>
-    <div class="hint">Input: 41-bp sequences (A, C, G, T) with C at position 21. <a href="#" id="ex2">Load example sequences</a></div>
+    <div class="hint">Input: A, C, G, T; each sequence at least 41 bp; up to 20,000 bp per job. <a href="#" id="ex2">Load example 41-bp sites</a> · <a href="#" id="ex1">Load example 600-bp region</a></div>
 
     <h3 style="margin-top:20px">Reference model</h3>
     <div class="species">
@@ -329,8 +329,10 @@ $("file").onchange = e => loadFile(e.target.files[0]);
 ["dragleave", "drop"].forEach(ev => $("drop").addEventListener(ev, e => { e.preventDefault(); $("drop").classList.remove("over"); }));
 $("drop").addEventListener("drop", e => loadFile(e.dataTransfer.files[0]));
 
+const EX_REGION = ">OR_chr1_7748505_7749104\nCGATCTACTCCCATAAGCAGATTTATAGCTCTTGGAACTTTGGAAGAATGGTAGTTGGGTGACATAATGCTACTAGATGCATGGGCACGGCCAACATGCCCTGATCAGGGATATGGCCGGGGTCTTTTGGCTCATAGCATCATACTATTACACCTAGCTAGAGATTCCTAGTTAGCTAGAAAATGACAAGTTGATTATTCGTGTGGTCCTTTTATATATCTCTGCTACTTAAAAACATGGTTGTTCTCTTTTCAAACCATCGCGTGTAATGTCAGAAAACCCCGTAGAAAAAACTGAATCGGCCCACCTCCCATCATACACAATTTTTCCCCAGCTAAAAATTAACTAGCTAGAAAAACTCGATAGAAAAAATAAACCCTATATAAAACTATTATTCCTTGAAATCCCATTGCAACGCATGGGCATAGCGCTAGTGAGTTTGAAAAATTGGTGAGATTTTCCTATTGCCATCATCTCTTGAAACGACTCTTCAAATTAATAAAATAATAAAATGGCGTCACTGTTAATGTTATATGTGCATAAATTCCTTTTGCTCTTAATTTGATTTTAATTGTGGCATTTCTCTAATGTCCTAGTTAA\n";
 const EX_SITES = ">Oryza_rufipogon_1:7748805:-\nGTGTATGATGGGAGGTGGGCCGATTCAGTTTTTTCTACGGG\n>Oryza_rufipogon_12:22824527:+\nCATAGACCAACGAATTCATTCGAACCATCGGAGCACTGTGA\n>Oryza_rufipogon_12:19501887:+\nCTGCCGGCACCGGTGCTGGCCGTGCAGGTGACGGAGTTGGC\n>Oryza_rufipogon_4:23437147:-\nCTCATCACCACCGCCGTCTCCGCCGACCTCGGCACGCACAG\n";
 $("ex2").onclick = e => { e.preventDefault(); setMode("paste"); $("seq").value = EX_SITES; };
+$("ex1").onclick = e => { e.preventDefault(); setMode("paste"); $("seq").value = EX_REGION; };
 $("clear").onclick = () => { $("seq").value = ""; fileText = ""; $("fname").textContent = ""; $("file").value = ""; $("results").innerHTML = ""; $("err").style.display = "none"; };
 function showErr(m) { $("err").textContent = m; $("err").style.display = "block"; }
 
@@ -342,7 +344,7 @@ $("run").onclick = async () => {
   $("run").disabled = true; $("spin").style.display = "inline-block"; $("runtxt").textContent = "Running…";
   try {
     const r = await fetch("predict", {method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({sequences: text, species: document.querySelector("input[name=sp]:checked").value, mode: "site", threshold: $("thr").value})});
+      body: JSON.stringify({sequences: text, species: document.querySelector("input[name=sp]:checked").value, mode: "auto", threshold: $("thr").value})});
     let d; try { d = await r.json(); } catch { throw new Error(`server error (${r.status})`); }
     if (!r.ok) throw new Error(d.error || "prediction failed");
     render(d); $("results").scrollIntoView({behavior: "smooth", block: "start"});
@@ -351,6 +353,7 @@ $("run").onclick = async () => {
 };
 
 /* ---------------- predict: results */
+const PROBS = ["RF", "XGBoost", "LightGBM", "DNABERT", "DNABERT-BiLSTM", "prob_5mC"];
 function render(d) {
   const thr = parseFloat($("thr").value);
   $("results").innerHTML = Object.entries(d.results).map(([k, res]) => {
@@ -369,10 +372,10 @@ function render(d) {
     const shown = res.rows.slice(0, 3000);
     html += `<div class="row" style="margin:6px 0 12px"><button class="ghost" onclick="dl('${k}')">Download predictions (CSV)</button>
       ${res.rows.length > shown.length ? `<span class="small muted">Showing the first ${shown.length.toLocaleString()} of ${res.rows.length.toLocaleString()} rows; the CSV has all.</span>` : ""}</div>
-      <div class="tablewrap" style="max-height:520px"><table><thead><tr>${c.map(x => `<th class="${["position", "RF", "XGBoost", "LightGBM", "DNABERT", "DNABERT-BiLSTM", "prob_5mC"].includes(x) ? "num" : ""}">${esc(x)}</th>`).join("")}</tr></thead><tbody>` +
+      <div class="tablewrap" style="max-height:520px"><table><thead><tr>${c.map(x => `<th class="${["position", "window_start", "window_end", ...PROBS].includes(x) ? "num" : ""}">${esc(x)}</th>`).join("")}</tr></thead><tbody>` +
       shown.map(row => "<tr>" + row.map((v, j) => {
         if (j === ipred) return `<td><span class="tag"><span class="dot" style="background:var(${v === "5mC" ? "--meth" : "--unmeth"})"></span>${esc(v)}</span></td>`;
-        if (typeof v === "number") return `<td class="num">${Number.isInteger(v) && j === 1 ? v : v.toFixed(3)}</td>`;
+        if (typeof v === "number") return `<td class="num">${PROBS.includes(c[j]) ? v.toFixed(3) : v}</td>`;
         return `<td class="${c[j] === "window" ? "win" : ""}">${esc(v)}</td>`;
       }).join("") + "</tr>").join("") + "</tbody></table></div>";
     return html + "</div>";
