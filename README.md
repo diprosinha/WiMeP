@@ -30,7 +30,7 @@ Output CSV columns: `seq_id`, `position` (1-based on the input sequence; for `-`
 `window` (41 bp, read 5'→3' on the cytosine's strand), the probability from each model, `prob_5mC` (ensemble) and `prediction`.
 
 ## Web server
-Multi-page web interface (Home, Predict, Resources, Developers, Contact). Users paste or upload FASTA, choose the
+Multi-page web interface (Home, Predict, Resources, Developers). Users paste or upload FASTA, choose the
 *O. rufipogon*, *Ae. tauschii* or both models, and get a results table, a probability track and sequence view
 (scan mode) and a CSV download.
 
@@ -54,7 +54,7 @@ docker run -p 8080:8080 wildepipred                       # http://<server>:8080
 Endpoints: `GET /` (site), `GET /downloads/...` (example data and datasets), `GET /health`,
 `POST /predict` (JSON: `species` = `rufipogon` / `tauschii` / `both`, `sequences` = FASTA text, optional `mode`, `threshold`).
 The server handles one prediction at a time and has no TLS; for public hosting, put it behind a reverse proxy
-(e.g. nginx or Caddy) that provides HTTPS. The Developers and Contact pages are in `web/index.html`.
+(e.g. nginx or Caddy) that provides HTTPS. The Developers page is in `web/index.html`.
 
 ## Authors
 Dipro Sinha, Subham Ghosh, Abhik Sarkar, Sougata Bhattacharjee, Sayanti Guha Majumdar, Sneha Murmu

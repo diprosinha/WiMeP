@@ -136,7 +136,7 @@ footer div { max-width: 1120px; margin: 0 auto; padding: 20px 16px 28px; display
       WildEpiPred
     </a>
     <div class="tabs">
-      <a href="#home">Home</a><a href="#predict">Predict</a><a href="#resources">Resources</a><a href="#developers">Developers</a><a href="#contact">Contact</a>
+      <a href="#home">Home</a><a href="#predict">Predict</a><a href="#resources">Resources</a><a href="#developers">Developers</a>
     </div>
   </nav>
 </header>
@@ -290,27 +290,6 @@ python wildepipred.py predict --species rufipogon --input my_seqs.fasta --out pr
   <div class="grid g3" id="people"></div>
 </section>
 
-<!-- ============================================================ CONTACT -->
-<section class="page" id="page-contact">
-  <h1>Contact</h1>
-  <p class="lead">For questions, bug reports or collaboration, please contact the authors below or open an issue on GitHub.</p>
-  <div class="grid g2">
-    <div class="card person">
-      <div class="avatar" aria-hidden="true">DS</div>
-      <div><h3>Dipro Sinha</h3><div class="role">Post Doctoral Fellow</div>
-        <div class="aff">Department of Veterinary and Biomedical Sciences, South Dakota State University, Brookings, SD 57007, USA</div></div>
-    </div>
-    <div class="card person">
-      <div class="avatar" aria-hidden="true">SM</div>
-      <div><h3>Sneha Murmu</h3><div class="role">Scientist</div>
-        <div class="aff">Division of Agricultural Bioinformatics, ICAR–Indian Agricultural Statistics Research Institute, Pusa, New Delhi 110012, India</div></div>
-    </div>
-  </div>
-  <div class="card">
-    <h2>Report an issue</h2>
-    <p>Bug reports and feature requests: <a href="https://github.com/diprosinha/WildEpiPred/issues" target="_blank" rel="noopener">github.com/diprosinha/WildEpiPred/issues</a></p>
-  </div>
-</section>
 </main>
 
 <footer><div>
@@ -323,7 +302,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 
 /* ---------------- routing */
-const PAGES = ["home", "predict", "resources", "developers", "contact"];
+const PAGES = ["home", "predict", "resources", "developers"];
 function route() {
   const p = PAGES.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
   PAGES.forEach(x => $("page-" + x).classList.toggle("active", x === p));
