@@ -1,4 +1,4 @@
-# WildEpiPred
+# WiMeP
 
 Prediction of DNA 5mC sites in two wild grasses, *Oryza rufipogon* and *Aegilops tauschii*.
 CG, CHG and CHH methylation are treated as one 5mC class. Each species has its own model.
@@ -7,17 +7,17 @@ CG, CHG and CHH methylation are treated as one 5mC class. Each species has its o
 The model files are stored with [Git LFS](https://git-lfs.com); install it before cloning.
 ```
 git lfs install
-git clone https://github.com/diprosinha/WildEpiPred.git
-cd WildEpiPred
+git clone https://github.com/diprosinha/WiMeP.git
+cd WiMeP
 conda env create -f environment.yml
-conda activate wildepipred
+conda activate wimep
 ```
 Runs on CPU, Apple GPU (MPS) or CUDA. All models are included (`models/`, about 1.3 GB); no internet connection is needed.
 
 ## Command line
 ```
-python wildepipred.py predict --species rufipogon --input example/Oryza_rufipogon_region.fasta --out region_predictions.csv
-python wildepipred.py predict --species tauschii  --input example/Aegilops_tauschii_sites.fasta --out site_predictions.csv
+python wimep.py predict --species rufipogon --input example/Oryza_rufipogon_region.fasta --out region_predictions.csv
+python wimep.py predict --species tauschii  --input example/Aegilops_tauschii_sites.fasta --out site_predictions.csv
 ```
 | Option | |
 |---|---|
@@ -36,20 +36,20 @@ Multi-page web interface (Home, Predict, Resources, Developers). Users paste or 
 
 Run directly:
 ```
-python wildepipred.py serve                               # http://127.0.0.1:8501 (this computer only)
-python wildepipred.py serve --host 0.0.0.0 --port 8080    # accept outside connections
+python wimep.py serve                               # http://127.0.0.1:8501 (this computer only)
+python wimep.py serve --host 0.0.0.0 --port 8080    # accept outside connections
 ```
 or with Docker (CPU image, any host or cloud platform):
 ```
-docker build -t wildepipred .
-docker run -p 8080:8080 wildepipred                       # http://<server>:8080
+docker build -t wimep .
+docker run -p 8080:8080 wimep                       # http://<server>:8080
 ```
 
 | Setting | Default | |
 |---|---|---|
 | `--host` / `HOST` | `127.0.0.1` (`0.0.0.0` in Docker) | listening address |
 | `--port` / `PORT` | `8501` (`8080` in Docker) | listening port |
-| `WILDEPIPRED_MAX_BP` | `20000` | maximum bp per web job; larger inputs should use the command line |
+| `WIMEP_MAX_BP` | `20000` | maximum bp per web job; larger inputs should use the command line |
 
 Endpoints: `GET /` (site), `GET /downloads/...` (example data and datasets), `GET /health`,
 `POST /predict` (JSON: `species` = `rufipogon` / `tauschii` / `both`, `sequences` = FASTA text, optional `mode`, `threshold`).

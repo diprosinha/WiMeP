@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WildEpiPred</title>
-<meta name="description" content="WildEpiPred: DNA 5mC site prediction for the wild grasses Oryza rufipogon and Aegilops tauschii.">
+<title>WiMeP</title>
+<meta name="description" content="WiMeP: DNA 5mC site prediction for the wild grasses Oryza rufipogon and Aegilops tauschii.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f5e4a'/%3E%3Cpath d='M10 6c6 5 6 15 12 20M22 6c-6 5-6 15-12 20' stroke='%23f4f1e8' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23e8743b'/%3E%3C/svg%3E">
 <style>
 :root {
@@ -134,7 +134,7 @@ footer div { max-width: 1120px; margin: 0 auto; padding: 20px 16px 28px; display
   <nav class="nav" aria-label="Main">
     <a class="logo" href="#home">
       <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="currentColor" opacity=".16"/><path d="M10 6c6 5 6 15 12 20M22 6c-6 5-6 15-12 20" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/><circle cx="16" cy="16" r="3" fill="#e8743b"/></svg>
-      WildEpiPred
+      WiMeP
     </a>
     <div class="tabs">
       <a href="#home">Home</a><a href="#predict">Predict</a><a href="#resources">Resources</a><a href="#developers">Developers</a>
@@ -148,7 +148,7 @@ footer div { max-width: 1120px; margin: 0 auto; padding: 20px 16px 28px; display
   <div class="hero">
     <div>
       <span class="pill">DNA 5mC prediction · wild grasses</span>
-      <h1>WildEpiPred</h1>
+      <h1>WiMeP</h1>
       <p class="lead">An ensemble deep-learning and machine-learning predictor of DNA 5-methylcytosine (5mC) sites in the wild rice <i class="sp">Oryza rufipogon</i> and the wild wheat progenitor <i class="sp">Aegilops tauschii</i>.</p>
       <div class="cta"><a class="btn" href="#predict">Start prediction</a><a class="btn ghost" href="#resources">Data &amp; downloads</a></div>
     </div>
@@ -156,7 +156,7 @@ footer div { max-width: 1120px; margin: 0 auto; padding: 20px 16px 28px; display
 
   <div class="card">
     <h2>Model pipeline</h2>
-    <a href="images/pipeline.svg" target="_blank" rel="noopener" title="Open full size"><img class="pipeline" src="images/pipeline.svg" alt="WildEpiPred pipeline: bisulfite methylome data, 41-bp positive and negative windows, cluster-disjoint split, feature encoding, entropy-based and stepwise feature selection, machine-learning and deep-learning models, optimised ensemble giving 5mC or non-5mC"></a>
+    <a href="images/pipeline.svg" target="_blank" rel="noopener" title="Open full size"><img class="pipeline" src="images/pipeline.svg" alt="WiMeP pipeline: bisulfite methylome data, 41-bp positive and negative windows, cluster-disjoint split, feature encoding, entropy-based and stepwise feature selection, machine-learning and deep-learning models, optimised ensemble giving 5mC or non-5mC"></a>
   </div>
 
   <div class="grid g2">
@@ -166,8 +166,8 @@ footer div { max-width: 1120px; margin: 0 auto; padding: 20px 16px 28px; display
       <p>Crop wild relatives such as <i class="sp">O. rufipogon</i> (the progenitor of cultivated rice) and <i class="sp">Ae. tauschii</i> (the D-genome donor of bread wheat) are reservoirs of adaptive variation, but their methylomes are far less studied than those of model species. Bisulfite sequencing is costly, so sequence-based prediction offers a fast first look at likely methylated sites.</p>
     </div>
     <div class="card">
-      <h2>About WildEpiPred</h2>
-      <p>WildEpiPred predicts whether a cytosine is methylated (5mC; CG, CHG and CHH treated as one class) from the 41-bp sequence centred on it. A separate model is trained for each species.</p>
+      <h2>About WiMeP</h2>
+      <p>WiMeP predicts whether a cytosine is methylated (5mC; CG, CHG and CHH treated as one class) from the 41-bp sequence centred on it. A separate model is trained for each species.</p>
       <p>Each model is an optimised ensemble of three machine-learning classifiers on selected handcrafted and DNABERT features (selected by mutual information and stepwise regression), a fine-tuned DNABERT-6 transformer and a DNABERT-BiLSTM. Ensemble weights are fitted on a cluster-disjoint validation set.</p>
       <p class="small muted">Positive sites come from whole-genome bisulfite sequencing; training and test sets are separated with CD-HIT-EST at 80% identity.</p>
     </div>
@@ -227,17 +227,17 @@ footer div { max-width: 1120px; margin: 0 auto; padding: 20px 16px 28px; display
 <!-- ============================================================ RESOURCES -->
 <section class="page" id="page-resources">
   <h1>Resources</h1>
-  <p class="lead">Example data, the training and testing datasets, and the command-line version of WildEpiPred.</p>
+  <p class="lead">Example data, the training and testing datasets, and the command-line version of WiMeP.</p>
   <div class="grid g2">
     <div class="card">
       <h2>Example data</h2>
-      <p>Example inputs with their WildEpiPred output: a 600-bp <i class="sp">O. rufipogon</i> genomic region (scan mode) and 41-bp test sites for both species (site mode).</p>
-      <a class="btn" href="downloads/WildEpiPred_example_data.zip" download>Download example data (zip, 95 KB)</a>
+      <p>Example inputs with their WiMeP output: a 600-bp <i class="sp">O. rufipogon</i> genomic region (scan mode) and 41-bp test sites for both species (site mode).</p>
+      <a class="btn" href="downloads/WiMeP_example_data.zip" download>Download example data (zip, 95 KB)</a>
     </div>
     <div class="card">
       <h2>Training and testing datasets</h2>
       <p>The four 41-bp datasets (5mC positive and negative for each species), split into training and independent test sets, in FASTA format.</p>
-      <a class="btn" href="downloads/WildEpiPred_5mC_datasets.zip" download>Download datasets (zip, 4.3 MB)</a>
+      <a class="btn" href="downloads/WiMeP_5mC_datasets.zip" download>Download datasets (zip, 4.3 MB)</a>
     </div>
   </div>
   <div class="card">
@@ -255,12 +255,12 @@ footer div { max-width: 1120px; margin: 0 auto; padding: 20px 16px 28px; display
   </div>
   <div class="card">
     <h2>Command-line tool</h2>
-    <p>For genomes or large sequence sets, run WildEpiPred locally (CPU, CUDA or Apple GPU). Source code and models: <a href="https://github.com/diprosinha/WildEpiPred" target="_blank" rel="noopener">github.com/diprosinha/WildEpiPred</a>.</p>
+    <p>For genomes or large sequence sets, run WiMeP locally (CPU, CUDA or Apple GPU). Source code and models: <a href="https://github.com/diprosinha/WiMeP" target="_blank" rel="noopener">github.com/diprosinha/WiMeP</a>.</p>
     <pre class="code">git lfs install
-git clone https://github.com/diprosinha/WildEpiPred.git
-cd WildEpiPred
-conda env create -f environment.yml &amp;&amp; conda activate wildepipred
-python wildepipred.py predict --species rufipogon --input my_seqs.fasta --out predictions.csv</pre>
+git clone https://github.com/diprosinha/WiMeP.git
+cd WiMeP
+conda env create -f environment.yml &amp;&amp; conda activate wimep
+python wimep.py predict --species rufipogon --input my_seqs.fasta --out predictions.csv</pre>
     <h3>Programmatic access</h3>
     <p class="small muted">This server also accepts JSON requests:</p>
     <pre class="code" id="apicode">curl -X POST <span class="origin"></span>/predict -H "Content-Type: application/json" \
@@ -271,14 +271,14 @@ python wildepipred.py predict --species rufipogon --input my_seqs.fasta --out pr
 <!-- ============================================================ DEVELOPERS -->
 <section class="page" id="page-developers">
   <h1>Developers</h1>
-  <p class="lead">WildEpiPred was developed by:</p>
+  <p class="lead">WiMeP was developed by:</p>
   <div class="grid g3" id="people"></div>
 </section>
 
 </main>
 
 <footer><div>
-  <span>WildEpiPred · DNA 5mC prediction for crop wild relatives</span>
+  <span>WiMeP · DNA 5mC prediction for crop wild relatives</span>
   <span>Sinha D, Ghosh S, Sarkar A, Bhattacharjee S, Guha Majumdar S, Murmu S</span>
 </div></footer>
 
@@ -292,7 +292,7 @@ function route() {
   const p = PAGES.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
   PAGES.forEach(x => $("page-" + x).classList.toggle("active", x === p));
   document.querySelectorAll(".tabs a").forEach(a => a.setAttribute("aria-current", a.getAttribute("href") === "#" + p ? "page" : "false"));
-  document.title = p === "home" ? "WildEpiPred" : `${p[0].toUpperCase() + p.slice(1)} · WildEpiPred`;
+  document.title = p === "home" ? "WiMeP" : `${p[0].toUpperCase() + p.slice(1)} · WiMeP`;
   window.scrollTo(0, 0);
 }
 addEventListener("hashchange", route); route();
@@ -385,7 +385,7 @@ function render(d) {
 function dl(k) {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([window._csv[k]], {type: "text/csv"}));
-  a.download = `WildEpiPred_${k}_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+  a.download = `WiMeP_${k}_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
 }
 function track(id, rows, ip, thr) {
   const W = Math.min(1040, Math.max(320, $("results").clientWidth - 50)), H = 150, L = 34, R = 10, T = 10, B = 26;

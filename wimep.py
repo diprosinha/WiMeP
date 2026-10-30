@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""WildEpiPred: prediction of DNA 5mC sites in Oryza rufipogon and Aegilops tauschii.
+"""WiMeP: prediction of DNA 5mC sites in Oryza rufipogon and Aegilops tauschii.
 
 Each species has its own model: an ensemble of Random Forest, XGBoost, LightGBM (on selected handcrafted +
 DNABERT features), fine-tuned DNABERT-6 and a DNABERT-BiLSTM. 5mC = CG, CHG and CHH methylation as one class.
@@ -11,8 +11,8 @@ Input: FASTA (or CSV with a `sequence` column).
   auto       site mode if all sequences are 41 bp with C at position 21, otherwise scan mode
 
 usage:
-  python wildepipred.py predict --species rufipogon --input seqs.fasta --out predictions.csv
-  python wildepipred.py serve   [--host 0.0.0.0] [--port 8501]   # web server (http://127.0.0.1:8501)
+  python wimep.py predict --species rufipogon --input seqs.fasta --out predictions.csv
+  python wimep.py serve   [--host 0.0.0.0] [--port 8501]   # web server (http://127.0.0.1:8501)
 """
 import argparse, functools, io, json, os, re, sys
 import numpy as np
@@ -26,7 +26,7 @@ SPECIES = {"rufipogon": "Oryza_rufipogon", "tauschii": "Aegilops_tauschii"}
 BASE_MODEL = os.path.join(HERE, "models", "dnabert_base")  # frozen zhihan1996/DNA_bert_6 (embeddings)
 MODELS = ["RF", "XGBoost", "LightGBM", "DNABERT", "DNABERT-BiLSTM"]
 HALF, COMP = 20, str.maketrans("ACGTN", "TGCAN")
-MAX_WEB_BP = int(os.environ.get("WILDEPIPRED_MAX_BP", 20000))
+MAX_WEB_BP = int(os.environ.get("WIMEP_MAX_BP", 20000))
 
 
 def kmers(s, k=6):
@@ -232,12 +232,12 @@ def serve(host, port):
     print("loading models ...", flush=True)
     for sp in SPECIES: load_species(sp)
     base_bert()
-    print(f"WildEpiPred web server: http://{'127.0.0.1' if host in ('0.0.0.0', '') else host}:{port}  (Ctrl+C to stop)", flush=True)
+    print(f"WiMeP web server: http://{'127.0.0.1' if host in ('0.0.0.0', '') else host}:{port}  (Ctrl+C to stop)", flush=True)
     ThreadingHTTPServer((host, port), H).serve_forever()
 
 
 def main():
-    ap = argparse.ArgumentParser(description="WildEpiPred: 5mC site prediction for Oryza rufipogon and Aegilops tauschii")
+    ap = argparse.ArgumentParser(description="WiMeP: 5mC site prediction for Oryza rufipogon and Aegilops tauschii")
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("predict", help="score sequences from a FASTA/CSV file")
     p.add_argument("--species", required=True, choices=sorted(SPECIES))

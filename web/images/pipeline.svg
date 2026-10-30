@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 1125" width="2000" height="1125" role="img" aria-labelledby="ttl dsc" font-family="Arial, Helvetica, sans-serif">
-<title id="ttl">WildEpiPred pipeline</title>
+<title id="ttl">WiMeP pipeline</title>
 <desc id="dsc">Wild plants (Oryza rufipogon, Aegilops tauschii) give bisulfite methylome data; 41-bp sequences are encoded as nucleotide chemical properties, GC content, mono-nucleotide binary encoding, oligonucleotide frequency, PSTNPss, EIIP and DNABERT-6 embeddings; features are reduced by entropy-based and stepwise-regression feature selection; machine-learning (Random Forest, XGBoost, LightGBM) and deep-learning (DNABERT, BiLSTM) models are combined in an optimised ensemble that predicts 5mC or no methylation.</desc>
 <defs>
   <radialGradient id="bg" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="#fffaf0"/><stop offset=".6" stop-color="#fdf0d8"/><stop offset="1" stop-color="#f6dfb8"/></radialGradient>

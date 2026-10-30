@@ -1,4 +1,4 @@
-"""Handcrafted sequence encodings for 41-bp windows (feature groups of the WildEpiPred pipeline).
+"""Handcrafted sequence encodings for 41-bp windows (feature groups of the WiMeP pipeline).
 
 NCP    nucleotide chemical properties (ring structure, functional group, hydrogen bonding), 3 x 41
 GC     GC content, 1

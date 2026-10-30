@@ -1,4 +1,4 @@
-name: wildepipred
+name: wimep
 channels:
   - conda-forge
 dependencies:
