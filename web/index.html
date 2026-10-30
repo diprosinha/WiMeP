@@ -82,6 +82,10 @@ select, input[type=number] { font: inherit; font-size: 15px; padding: 8px 10px; 
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-bottom: 14px; }
 .seg button { border: 0; border-radius: 0; background: transparent; color: var(--ink-2); font-weight: 500; padding: 8px 16px; }
 .seg button[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); }
+.samples { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px; }
+.samples-lbl { font-size: 14px; font-weight: 600; color: var(--ink-2); margin-right: 2px; }
+.chip-btn { font-size: 13.5px; font-weight: 500; padding: 6px 12px; border-radius: 999px; background: var(--ok-bg); color: var(--brand-2); border: 1px solid var(--line); }
+.chip-btn:hover { border-color: var(--brand-2); }
 .drop { border: 1.5px dashed var(--line); border-radius: 10px; padding: 28px 16px; text-align: center; color: var(--ink-2); background: var(--bg); cursor: pointer; }
 .drop.over { border-color: var(--brand-2); background: var(--ok-bg); }
 .species { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
@@ -191,6 +195,12 @@ footer div { max-width: 1120px; margin: 0 auto; padding: 20px 16px 28px; display
   <p class="lead">Upload a FASTA file or paste sequences of at least 41 bp. A 41-bp sequence with C at position 21 is scored as one site; any other sequence is cut into overlapping 41-bp windows (step 1 bp), and every window centred on a cytosine is scored.</p>
 
   <div class="card">
+    <div class="samples" role="group" aria-label="Sample sequences">
+      <span class="samples-lbl">Paste a sample sequence:</span>
+      <button type="button" class="chip-btn" data-sample="or_sites" data-sp="rufipogon"><i class="sp">O. rufipogon</i> · 41-bp sites</button>
+      <button type="button" class="chip-btn" data-sample="at_sites" data-sp="tauschii"><i class="sp">Ae. tauschii</i> · 41-bp sites</button>
+      <button type="button" class="chip-btn" data-sample="or_region" data-sp="rufipogon"><i class="sp">O. rufipogon</i> · 600-bp region</button>
+    </div>
     <div class="seg" role="group" aria-label="Input type">
       <button type="button" id="m-paste" aria-pressed="true">Paste sequence</button>
       <button type="button" id="m-file" aria-pressed="false">Upload FASTA file</button>
@@ -204,7 +214,7 @@ footer div { max-width: 1120px; margin: 0 auto; padding: 20px 16px 28px; display
       <div class="drop" id="drop" tabindex="0">Drop a FASTA file here or <u>choose a file</u><br><span class="small" id="fname"></span></div>
       <input type="file" id="file" accept=".fasta,.fa,.fna,.fas,.txt" hidden>
     </div>
-    <div class="hint">Input: A, C, G, T; each sequence at least 41 bp; up to 20,000 bp per job. <a href="#" id="ex2">Load example 41-bp sites</a> · <a href="#" id="ex1">Load example 600-bp region</a></div>
+    <div class="hint">Input: A, C, G, T; each sequence at least 41 bp; up to 20,000 bp per job.</div>
 
     <h3 style="margin-top:20px">Reference model</h3>
     <div class="species">
@@ -331,8 +341,13 @@ $("drop").addEventListener("drop", e => loadFile(e.dataTransfer.files[0]));
 
 const EX_REGION = ">OR_chr1_7748505_7749104\nCGATCTACTCCCATAAGCAGATTTATAGCTCTTGGAACTTTGGAAGAATGGTAGTTGGGTGACATAATGCTACTAGATGCATGGGCACGGCCAACATGCCCTGATCAGGGATATGGCCGGGGTCTTTTGGCTCATAGCATCATACTATTACACCTAGCTAGAGATTCCTAGTTAGCTAGAAAATGACAAGTTGATTATTCGTGTGGTCCTTTTATATATCTCTGCTACTTAAAAACATGGTTGTTCTCTTTTCAAACCATCGCGTGTAATGTCAGAAAACCCCGTAGAAAAAACTGAATCGGCCCACCTCCCATCATACACAATTTTTCCCCAGCTAAAAATTAACTAGCTAGAAAAACTCGATAGAAAAAATAAACCCTATATAAAACTATTATTCCTTGAAATCCCATTGCAACGCATGGGCATAGCGCTAGTGAGTTTGAAAAATTGGTGAGATTTTCCTATTGCCATCATCTCTTGAAACGACTCTTCAAATTAATAAAATAATAAAATGGCGTCACTGTTAATGTTATATGTGCATAAATTCCTTTTGCTCTTAATTTGATTTTAATTGTGGCATTTCTCTAATGTCCTAGTTAA\n";
 const EX_SITES = ">Oryza_rufipogon_1:7748805:-\nGTGTATGATGGGAGGTGGGCCGATTCAGTTTTTTCTACGGG\n>Oryza_rufipogon_12:22824527:+\nCATAGACCAACGAATTCATTCGAACCATCGGAGCACTGTGA\n>Oryza_rufipogon_12:19501887:+\nCTGCCGGCACCGGTGCTGGCCGTGCAGGTGACGGAGTTGGC\n>Oryza_rufipogon_4:23437147:-\nCTCATCACCACCGCCGTCTCCGCCGACCTCGGCACGCACAG\n";
-$("ex2").onclick = e => { e.preventDefault(); setMode("paste"); $("seq").value = EX_SITES; };
-$("ex1").onclick = e => { e.preventDefault(); setMode("paste"); $("seq").value = EX_REGION; };
+const EX_AT_SITES = ">Aegilops_tauschii_6D:450103656:-\nAAAAATAATGCGGTGCATGTCGATGAAAAAGACAATCAGTG\n>Aegilops_tauschii_7D:531560165:+\nCCCGATGAGTGCCACGGGATCGTACGTCTGTCGATTCCAGC\n>Aegilops_tauschii_3D:423216116:-\nGGTCGTGGTGGCGGTGACCACGTCGGCCGCCGTCGGGCTCG\n>Aegilops_tauschii_7D:426673219:+\nCTGCGGATCGAGATCGTCGCCGGGGACGACGGGCCGGGGGC\n";
+const SAMPLES = {or_sites: EX_SITES, at_sites: EX_AT_SITES, or_region: EX_REGION};
+document.querySelectorAll(".chip-btn").forEach(b => b.onclick = () => {
+  setMode("paste"); $("seq").value = SAMPLES[b.dataset.sample];
+  document.querySelector(`input[name=sp][value=${b.dataset.sp}]`).checked = true;
+  $("results").innerHTML = ""; $("err").style.display = "none"; $("seq").focus();
+});
 $("clear").onclick = () => { $("seq").value = ""; fileText = ""; $("fname").textContent = ""; $("file").value = ""; $("results").innerHTML = ""; $("err").style.display = "none"; };
 function showErr(m) { $("err").textContent = m; $("err").style.display = "block"; }
 
