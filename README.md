@@ -1,14 +1,3 @@
----
-title: WildEpiPred
-emoji: 🌾
-colorFrom: green
-colorTo: yellow
-sdk: docker
-app_port: 7860
-pinned: false
-short_description: DNA 5mC site prediction for O. rufipogon and Ae. tauschii
----
-
 # WildEpiPred
 
 Prediction of DNA 5mC sites in two wild grasses, *Oryza rufipogon* and *Aegilops tauschii*.
@@ -41,11 +30,31 @@ Output CSV columns: `seq_id`, `position` (1-based on the input sequence; for `-`
 `window` (41 bp, read 5'→3' on the cytosine's strand), the probability from each model, `prob_5mC` (ensemble) and `prediction`.
 
 ## Web server
-The web server (Home, Predict, Resources, Developers, Contact) runs locally with
+Multi-page web interface (Home, Predict, Resources, Developers, Contact). Users paste or upload FASTA, choose the
+*O. rufipogon*, *Ae. tauschii* or both models, and get a results table, a probability track and sequence view
+(scan mode) and a CSV download.
+
+Run directly:
 ```
-python wildepipred.py serve            # then open http://127.0.0.1:8501
+python wildepipred.py serve                               # http://127.0.0.1:8501 (this computer only)
+python wildepipred.py serve --host 0.0.0.0 --port 8080    # accept outside connections
 ```
-or as a Hugging Face Docker Space (`Dockerfile`, port 7860). Paste or upload FASTA, choose the *O. rufipogon*, *Ae. tauschii* or both models, and get a results table, a probability track and sequence view (scan mode) and a CSV download. Web input is limited to 20,000 bp per job (`WILDEPIPRED_MAX_BP`); use the command line for larger inputs. `POST /predict` accepts JSON (`species`, `sequences`, optional `mode`, `threshold`).
+or with Docker (CPU image, any host or cloud platform):
+```
+docker build -t wildepipred .
+docker run -p 8080:8080 wildepipred                       # http://<server>:8080
+```
+
+| Setting | Default | |
+|---|---|---|
+| `--host` / `HOST` | `127.0.0.1` (`0.0.0.0` in Docker) | listening address |
+| `--port` / `PORT` | `8501` (`8080` in Docker) | listening port |
+| `WILDEPIPRED_MAX_BP` | `20000` | maximum bp per web job; larger inputs should use the command line |
+
+Endpoints: `GET /` (site), `GET /downloads/...` (example data and datasets), `GET /health`,
+`POST /predict` (JSON: `species` = `rufipogon` / `tauschii` / `both`, `sequences` = FASTA text, optional `mode`, `threshold`).
+The server handles one prediction at a time and has no TLS; for public hosting, put it behind a reverse proxy
+(e.g. nginx or Caddy) that provides HTTPS. The Developers and Contact pages are in `web/index.html`.
 
 ## Authors
 Dipro Sinha, Subham Ghosh, Abhik Sarkar, Sougata Bhattacharjee, Sayanti Guha Majumdar, Sneha Murmu
