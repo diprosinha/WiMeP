@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WildEpiPred</title>
+<style>
+:root {
+  --bg: #f7f7f5; --surface: #ffffff; --ink: #1d1d1b; --ink-2: #55554f; --ink-3: #8a8a82; --line: #e2e2dc;
+  --accent: #2a78d6; --accent-ink: #ffffff; --meth: #eb6834; --unmeth: #2a78d6; --err: #b3261e; --err-bg: #fbeae8;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141413; --surface: #1e1e1c; --ink: #ededE8; --ink-2: #b4b4ac; --ink-3: #82827a; --line: #33332f;
+    --accent: #5a9be6; --accent-ink: #0d0d0c; --meth: #f08458; --unmeth: #5a9be6; --err: #f2b8b5; --err-bg: #3a1f1d;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
+.sub { color: var(--ink-2); margin: 0 0 24px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+label { font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px; }
+textarea { width: 100%; min-height: 170px; font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 10px;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); resize: vertical; }
+.row { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-top: 14px; }
+.field { display: flex; flex-direction: column; }
+select, input[type=number] { font: inherit; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); min-width: 150px; }
+button { font: inherit; font-weight: 600; padding: 8px 18px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+button.ghost { background: transparent; color: var(--accent); }
+button:disabled { opacity: .55; cursor: progress; }
+.hint { color: var(--ink-3); font-size: 13px; margin-top: 8px; }
+.err { background: var(--err-bg); color: var(--err); padding: 10px 14px; border-radius: 8px; margin-top: 14px; display: none; }
+.stats { display: flex; gap: 28px; flex-wrap: wrap; margin-bottom: 14px; }
+.stat b { display: block; font-size: 24px; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--ink-2); font-size: 13px; }
+.tablewrap { overflow: auto; max-height: 520px; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { position: sticky; top: 0; background: var(--surface); font-weight: 600; color: var(--ink-2); }
+td.num { text-align: right; } td.win { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+.tag { display: inline-flex; align-items: center; gap: 6px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+svg text { fill: var(--ink-3); font-size: 11px; }
+.legend { display: flex; gap: 18px; font-size: 13px; color: var(--ink-2); margin: 6px 0 2px; }
+#results { display: none; }
+.models { color: var(--ink-2); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>WildEpiPred</h1>
+  <p class="sub">DNA 5mC site prediction for <i>Oryza rufipogon</i> and <i>Aegilops tauschii</i>; CG, CHG and CHH methylation treated as one class.</p>
+
+  <div class="card">
+    <label for="seq">Sequences (FASTA or plain sequence)</label>
+    <textarea id="seq" spellcheck="false" placeholder=">my_sequence&#10;ACGT..."></textarea>
+    <div class="hint">41-bp sequences with C at position 21 are scored as single sites. Longer sequences are scanned: every C on both strands with 20 bp on each side is scored. Web input limit 20,000 bp.</div>
+    <div class="row">
+      <div class="field"><label for="species">Species model</label>
+        <select id="species"><option value="rufipogon">Oryza rufipogon</option><option value="tauschii">Aegilops tauschii</option></select></div>
+      <div class="field"><label for="mode">Mode</label>
+        <select id="mode"><option value="auto">Auto</option><option value="site">41-bp sites</option><option value="scan">Scan every C</option></select></div>
+      <div class="field"><label for="thr">Threshold</label><input id="thr" type="number" min="0" max="1" step="0.05" value="0.5"></div>
+      <button id="run">Predict</button>
+      <button id="ex" class="ghost">Load example</button>
+    </div>
+    <div id="err" class="err"></div>
+  </div>
+
+  <div id="results" class="card">
+    <div class="stats">
+      <div class="stat"><b id="s-n">0</b><span>cytosines scored</span></div>
+      <div class="stat"><b id="s-m">0</b><span>predicted 5mC</span></div>
+      <div class="stat"><b id="s-mode">–</b><span>mode</span></div>
+    </div>
+    <div id="track"></div>
+    <div class="row" style="margin: 4px 0 12px;"><button id="dl" class="ghost">Download CSV</button></div>
+    <div class="tablewrap"><table id="tbl"></table></div>
+    <p class="models">prob_5mC is the ensemble of Random Forest, XGBoost, LightGBM, fine-tuned DNABERT and DNABERT-BiLSTM, trained separately for each species.</p>
+  </div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const EXAMPLE = ">example_region\nTTGCCGGAGCTCGACGGCGGCGGCGAGGTGGAGCGGCAGCAGCCGCCGGCGTTGCGGCTCCTGCTCATCGGCGGCGGCGTAGTGGAGGCGGCGAGCGCAGGCGGCGGCGAGGCGG\n";
+let lastCsv = "";
+$("ex").onclick = () => { $("seq").value = EXAMPLE; $("mode").value = "auto"; };
+$("dl").onclick = () => {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([lastCsv], {type: "text/csv"}));
+  a.download = "wildepipred_predictions.csv"; a.click();
+};
+$("run").onclick = async () => {
+  $("err").style.display = "none"; $("run").disabled = true; $("run").textContent = "Predicting…";
+  try {
+    const r = await fetch("/predict", {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({sequences: $("seq").value, species: $("species").value, mode: $("mode").value, threshold: $("thr").value})});
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || "prediction failed");
+    show(d);
+  } catch (e) { $("err").textContent = e.message; $("err").style.display = "block"; }
+  finally { $("run").disabled = false; $("run").textContent = "Predict"; }
+};
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c])); }
+function show(d) {
+  lastCsv = d.csv;
+  $("s-n").textContent = d.n.toLocaleString(); $("s-m").textContent = d.n_5mC.toLocaleString(); $("s-mode").textContent = d.mode;
+  const c = d.columns, ip = c.indexOf("prob_5mC"), ipred = c.indexOf("prediction");
+  let h = "<thead><tr>" + c.map(x => `<th>${esc(x)}</th>`).join("") + "</tr></thead><tbody>";
+  for (const row of d.rows.slice(0, 5000)) {
+    h += "<tr>" + row.map((v, j) => {
+      if (j === ipred) return `<td><span class="tag"><span class="dot" style="background:var(${v === "5mC" ? "--meth" : "--unmeth"})"></span>${esc(v)}</span></td>`;
+      if (typeof v === "number" && !Number.isInteger(v)) return `<td class="num">${v.toFixed(3)}</td>`;
+      return `<td class="${c[j] === "window" ? "win" : ""}">${esc(v)}</td>`;
+    }).join("") + "</tr>";
+  }
+  $("tbl").innerHTML = h + "</tbody>";
+  drawTrack(d, ip);
+  $("results").style.display = "block";
+}
+function drawTrack(d, ip) {
+  // probability along the sequence (scan mode, first sequence only)
+  const t = $("track"); t.innerHTML = "";
+  if (d.mode !== "scan" || !d.rows.length) return;
+  const first = d.rows[0][0], rows = d.rows.filter(r => r[0] === first);
+  const W = Math.max(320, t.clientWidth || 900), H = 150, L = 34, R = 10, T = 10, B = 26;
+  const xmax = Math.max(...rows.map(r => r[1])), xmin = Math.min(...rows.map(r => r[1]));
+  const x = p => L + (p - xmin) / Math.max(1, xmax - xmin) * (W - L - R), y = v => T + (1 - v) * (H - T - B);
+  const thr = parseFloat($("thr").value);
+  let s = `<svg width="${W}" height="${H}" role="img" aria-label="5mC probability along ${esc(first)}">`;
+  for (const v of [0, 0.5, 1]) s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+  s += `<line x1="${L}" x2="${W - R}" y1="${y(thr)}" y2="${y(thr)}" stroke="var(--ink-3)" stroke-dasharray="3 3"/>`;
+  for (const r of rows) {
+    const v = r[ip], col = v >= thr ? "var(--meth)" : "var(--unmeth)";
+    s += `<line x1="${x(r[1])}" x2="${x(r[1])}" y1="${y(0)}" y2="${y(v)}" stroke="${col}" stroke-width="2" stroke-linecap="round"><title>${esc(r[1])} ${esc(r[2])} ${esc(r[3])}: ${v.toFixed(3)}</title></line>`;
+  }
+  s += `<text x="${L}" y="${H - 6}">${xmin}</text><text x="${W - R}" y="${H - 6}" text-anchor="end">${xmax} bp</text></svg>`;
+  t.innerHTML = `<div class="legend"><span class="tag"><span class="dot" style="background:var(--meth)"></span>5mC</span><span class="tag"><span class="dot" style="background:var(--unmeth)"></span>non-5mC</span><span>${esc(first)}: probability per cytosine (both strands)</span></div>` + s;
+}
+</script>
+</body>
+</html>
