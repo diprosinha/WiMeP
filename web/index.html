@@ -4,139 +4,464 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WildEpiPred</title>
+<meta name="description" content="WildEpiPred: DNA 5mC site prediction for the wild grasses Oryza rufipogon and Aegilops tauschii.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f5e4a'/%3E%3Cpath d='M10 6c6 5 6 15 12 20M22 6c-6 5-6 15-12 20' stroke='%23f4f1e8' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23e8743b'/%3E%3C/svg%3E">
 <style>
 :root {
-  --bg: #f7f7f5; --surface: #ffffff; --ink: #1d1d1b; --ink-2: #55554f; --ink-3: #8a8a82; --line: #e2e2dc;
-  --accent: #2a78d6; --accent-ink: #ffffff; --meth: #eb6834; --unmeth: #2a78d6; --err: #b3261e; --err-bg: #fbeae8;
+  --bg: #f6f5f0; --surface: #ffffff; --surface-2: #eef0ea; --ink: #1b1f1c; --ink-2: #4c5650; --ink-3: #7d8781;
+  --line: #dde1da; --brand: #1f5e4a; --brand-2: #2f7d63; --brand-ink: #f4f1e8; --accent: #e8743b;
+  --meth: #e0662e; --unmeth: #2a78d6; --err: #a8261d; --err-bg: #fbe9e6; --ok-bg: #e6f2ec;
+  --shadow: 0 1px 2px rgba(20, 30, 25, .06), 0 4px 16px rgba(20, 30, 25, .05);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #141413; --surface: #1e1e1c; --ink: #ededE8; --ink-2: #b4b4ac; --ink-3: #82827a; --line: #33332f;
-    --accent: #5a9be6; --accent-ink: #0d0d0c; --meth: #f08458; --unmeth: #5a9be6; --err: #f2b8b5; --err-bg: #3a1f1d;
+    --bg: #111513; --surface: #1a1f1c; --surface-2: #222925; --ink: #e9ece7; --ink-2: #b2bbb5; --ink-3: #848e88;
+    --line: #2e3631; --brand: #7cc3a5; --brand-2: #9bd5bb; --brand-ink: #0f1a15; --accent: #f08a55;
+    --meth: #f08458; --unmeth: #5a9be6; --err: #f2b8b2; --err-bg: #3a1e1b; --ok-bg: #1b2e25;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3);
   }
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 64px; }
-h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
-.sub { color: var(--ink-2); margin: 0 0 24px; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
-label { font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px; }
-textarea { width: 100%; min-height: 170px; font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 10px;
-  border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); resize: vertical; }
-.row { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-top: 14px; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; }
+a { color: var(--brand-2); }
+i.sp { font-style: italic; }
+
+/* navigation */
+header { background: var(--brand); color: var(--brand-ink); position: sticky; top: 0; z-index: 10; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) header { background: #16231d; color: var(--ink); } }
+.nav { max-width: 1120px; margin: 0 auto; padding: 0 16px; display: flex; align-items: center; gap: 24px; min-height: 60px; flex-wrap: wrap; }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 20px; letter-spacing: -0.01em; color: inherit; text-decoration: none; }
+.logo svg { flex: none; }
+.tabs { display: flex; gap: 2px; flex-wrap: wrap; margin-left: auto; }
+.tabs a { color: inherit; opacity: .82; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 15px; font-weight: 500; }
+.tabs a:hover { opacity: 1; background: rgba(255, 255, 255, .08); }
+.tabs a[aria-current="page"] { opacity: 1; background: rgba(255, 255, 255, .16); }
+
+main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 48px; }
+section.page { display: none; }
+section.page.active { display: block; }
+h1 { font-size: clamp(28px, 4.5vw, 40px); line-height: 1.15; margin: 0 0 12px; letter-spacing: -0.02em; }
+h2 { font-size: 22px; margin: 0 0 12px; letter-spacing: -0.01em; }
+h3 { font-size: 17px; margin: 0 0 8px; }
+p { margin: 0 0 12px; }
+.lead { font-size: 18px; color: var(--ink-2); max-width: 760px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow); }
+.grid { display: grid; gap: 20px; }
+.g2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.g3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.muted { color: var(--ink-2); }
+.small { font-size: 14px; }
+
+/* home */
+.hero { padding: 24px 0 28px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 32px; align-items: center; }
+@media (max-width: 820px) { .hero { grid-template-columns: 1fr; } }
+.pill { display: inline-block; font-size: 13px; font-weight: 600; color: var(--brand-2); background: var(--ok-bg); padding: 3px 10px; border-radius: 999px; margin-bottom: 14px; }
+.cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+.flow { display: flex; flex-direction: column; gap: 8px; }
+.flow div { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; font-size: 14px; }
+.flow div b { color: var(--brand-2); display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.flow .arrow { border: 0; background: none; padding: 0; text-align: center; color: var(--ink-3); line-height: 1; }
+ol.steps { padding-left: 20px; margin: 0; }
+ol.steps li { margin-bottom: 8px; }
+
+/* tables */
+.tablewrap { overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { padding: 7px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { background: var(--surface-2); font-weight: 600; color: var(--ink-2); position: sticky; top: 0; }
+td.num, th.num { text-align: right; }
+tr.best td { font-weight: 600; }
+td.win { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+
+/* forms */
+label.lbl { font-weight: 600; font-size: 14px; display: block; margin-bottom: 6px; }
+textarea { width: 100%; min-height: 180px; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); resize: vertical; }
+select, input[type=number] { font: inherit; font-size: 15px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-bottom: 14px; }
+.seg button { border: 0; border-radius: 0; background: transparent; color: var(--ink-2); font-weight: 500; padding: 8px 16px; }
+.seg button[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); }
+.drop { border: 1.5px dashed var(--line); border-radius: 10px; padding: 28px 16px; text-align: center; color: var(--ink-2); background: var(--bg); cursor: pointer; }
+.drop.over { border-color: var(--brand-2); background: var(--ok-bg); }
+.species { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.species label { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 10px; padding: 12px; cursor: pointer; background: var(--surface); }
+.species label:has(input:checked) { border-color: var(--brand-2); background: var(--ok-bg); }
+.species input { margin-top: 4px; accent-color: var(--brand-2); }
+.species small { display: block; color: var(--ink-3); }
+.row { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-top: 16px; }
 .field { display: flex; flex-direction: column; }
-select, input[type=number] { font: inherit; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); min-width: 150px; }
-button { font: inherit; font-weight: 600; padding: 8px 18px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); cursor: pointer; }
-button.ghost { background: transparent; color: var(--accent); }
+button, .btn { font: inherit; font-size: 15px; font-weight: 600; padding: 9px 18px; border-radius: 9px; border: 1px solid var(--brand); background: var(--brand); color: var(--brand-ink); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+button.ghost, .btn.ghost { background: transparent; color: var(--brand-2); border-color: var(--line); }
 button:disabled { opacity: .55; cursor: progress; }
-.hint { color: var(--ink-3); font-size: 13px; margin-top: 8px; }
+.hint { color: var(--ink-3); font-size: 13.5px; margin-top: 8px; }
 .err { background: var(--err-bg); color: var(--err); padding: 10px 14px; border-radius: 8px; margin-top: 14px; display: none; }
-.stats { display: flex; gap: 28px; flex-wrap: wrap; margin-bottom: 14px; }
-.stat b { display: block; font-size: 24px; font-variant-numeric: tabular-nums; }
+.spin { width: 15px; height: 15px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: s 0.8s linear infinite; display: none; }
+@keyframes s { to { transform: rotate(360deg); } }
+
+/* results */
+.stats { display: flex; gap: 32px; flex-wrap: wrap; margin-bottom: 16px; }
+.stat b { display: block; font-size: 26px; font-variant-numeric: tabular-nums; line-height: 1.2; }
 .stat span { color: var(--ink-2); font-size: 13px; }
-.tablewrap { overflow: auto; max-height: 520px; border: 1px solid var(--line); border-radius: 8px; }
-table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
-th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
-th { position: sticky; top: 0; background: var(--surface); font-weight: 600; color: var(--ink-2); }
-td.num { text-align: right; } td.win { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--ink-2); margin: 4px 0 8px; }
 .tag { display: inline-flex; align-items: center; gap: 6px; }
-.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+.ring { width: 10px; height: 10px; border-radius: 50%; display: inline-block; border: 2px solid var(--meth); flex: none; }
 svg text { fill: var(--ink-3); font-size: 11px; }
-.legend { display: flex; gap: 18px; font-size: 13px; color: var(--ink-2); margin: 6px 0 2px; }
-#results { display: none; }
-.models { color: var(--ink-2); font-size: 13px; }
+.seqview { font: 13px/1.9 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; white-space: pre; }
+.seqview .co { color: var(--ink-3); user-select: none; }
+.seqview .m { background: var(--meth); color: #fff; border-radius: 3px; }
+.seqview .mr { box-shadow: inset 0 0 0 1.5px var(--meth); color: var(--meth); border-radius: 3px; font-weight: 700; }
+.seqview .u { color: var(--unmeth); }
+details summary { cursor: pointer; font-weight: 600; margin: 14px 0 8px; }
+
+/* people */
+.person { display: flex; gap: 14px; align-items: flex-start; }
+.avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--ok-bg); color: var(--brand-2); display: grid; place-items: center; font-weight: 700; font-size: 18px; flex: none; }
+.person h3 { margin: 2px 0 2px; }
+.person .role { font-size: 14px; color: var(--ink-2); }
+.person .aff { font-size: 13.5px; color: var(--ink-3); margin-top: 4px; }
+.person a { font-size: 13.5px; }
+
+pre.code { background: var(--surface-2); border-radius: 10px; padding: 14px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 8px 0 14px; }
+footer { border-top: 1px solid var(--line); color: var(--ink-3); font-size: 13.5px; }
+footer div { max-width: 1120px; margin: 0 auto; padding: 20px 16px 28px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+@media (max-width: 640px) { header { position: static; } .tabs { margin-left: 0; width: 100%; padding-bottom: 8px; } .tabs a { padding: 6px 10px; font-size: 14px; } .card { padding: 18px; } }
 </style>
 </head>
 <body>
+<header>
+  <nav class="nav" aria-label="Main">
+    <a class="logo" href="#home">
+      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="currentColor" opacity=".16"/><path d="M10 6c6 5 6 15 12 20M22 6c-6 5-6 15-12 20" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/><circle cx="16" cy="16" r="3" fill="#e8743b"/></svg>
+      WildEpiPred
+    </a>
+    <div class="tabs">
+      <a href="#home">Home</a><a href="#predict">Predict</a><a href="#resources">Resources</a><a href="#developers">Developers</a><a href="#contact">Contact</a>
+    </div>
+  </nav>
+</header>
+
 <main>
-  <h1>WildEpiPred</h1>
-  <p class="sub">DNA 5mC site prediction for <i>Oryza rufipogon</i> and <i>Aegilops tauschii</i>; CG, CHG and CHH methylation treated as one class.</p>
+<!-- ============================================================ HOME -->
+<section class="page" id="page-home">
+  <div class="hero">
+    <div>
+      <span class="pill">DNA 5mC prediction · wild grasses</span>
+      <h1>WildEpiPred</h1>
+      <p class="lead">An ensemble deep-learning and machine-learning predictor of DNA 5-methylcytosine (5mC) sites in the wild rice <i class="sp">Oryza rufipogon</i> and the wild wheat progenitor <i class="sp">Aegilops tauschii</i>.</p>
+      <div class="cta"><a class="btn" href="#predict">Start prediction</a><a class="btn ghost" href="#resources">Data &amp; downloads</a></div>
+    </div>
+    <div class="flow" aria-label="WildEpiPred workflow">
+      <div><b>Input</b>FASTA: 41-bp sites or longer sequences (every C on both strands is scanned)</div>
+      <div class="arrow">↓</div>
+      <div><b>Encoding</b>NCP · GC content · binary · oligonucleotide frequency · PSTNPss · EIIP · DNABERT-6 embeddings</div>
+      <div class="arrow">↓</div>
+      <div><b>Models</b>Random Forest · XGBoost · LightGBM · fine-tuned DNABERT · DNABERT-BiLSTM</div>
+      <div class="arrow">↓</div>
+      <div><b>Optimised ensemble</b>species-specific probability of 5mC for every cytosine</div>
+    </div>
+  </div>
+
+  <div class="grid g2">
+    <div class="card">
+      <h2>Background</h2>
+      <p>DNA methylation is a heritable epigenetic mark in which a methyl group is added to the fifth carbon of cytosine (5mC). In plants it occurs in three sequence contexts (CG, CHG and CHH, where H = A, C or T) and regulates transposon silencing, gene expression and genome stability.</p>
+      <p>Crop wild relatives such as <i class="sp">O. rufipogon</i> (the progenitor of cultivated rice) and <i class="sp">Ae. tauschii</i> (the D-genome donor of bread wheat) are reservoirs of adaptive variation, but their methylomes are far less studied than those of model species. Bisulfite sequencing is costly, so sequence-based prediction offers a fast first look at likely methylated sites.</p>
+    </div>
+    <div class="card">
+      <h2>About WildEpiPred</h2>
+      <p>WildEpiPred predicts whether a cytosine is methylated (5mC; CG, CHG and CHH treated as one class) from the 41-bp sequence centred on it. A separate model is trained for each species.</p>
+      <p>Each model is an optimised ensemble of three machine-learning classifiers on selected handcrafted and DNABERT features (selected by mutual information and stepwise regression), a fine-tuned DNABERT-6 transformer and a DNABERT-BiLSTM. Ensemble weights are fitted on a cluster-disjoint validation set.</p>
+      <p class="small muted">Positive sites come from whole-genome bisulfite sequencing; training and test sets are separated with CD-HIT-EST at 80% identity.</p>
+    </div>
+  </div>
 
   <div class="card">
-    <label for="seq">Sequences (FASTA or plain sequence)</label>
-    <textarea id="seq" spellcheck="false" placeholder=">my_sequence&#10;ACGT..."></textarea>
-    <div class="hint">41-bp sequences with C at position 21 are scored as single sites. Longer sequences are scanned: every C on both strands with 20 bp on each side is scored. Web input limit 20,000 bp.</div>
-    <div class="row">
-      <div class="field"><label for="species">Species model</label>
-        <select id="species"><option value="rufipogon">Oryza rufipogon</option><option value="tauschii">Aegilops tauschii</option></select></div>
-      <div class="field"><label for="mode">Mode</label>
-        <select id="mode"><option value="auto">Auto</option><option value="site">41-bp sites</option><option value="scan">Scan every C</option></select></div>
-      <div class="field"><label for="thr">Threshold</label><input id="thr" type="number" min="0" max="1" step="0.05" value="0.5"></div>
-      <button id="run">Predict</button>
-      <button id="ex" class="ghost">Load example</button>
-    </div>
-    <div id="err" class="err"></div>
+    <h2>Performance on independent test data</h2>
+    <p class="muted small">Cluster-disjoint test sets: <i class="sp">O. rufipogon</i> 9,868 5mC + 9,868 non-5mC; <i class="sp">Ae. tauschii</i> 8,041 + 8,041. No test sequence is ≥ 80% identical to a training sequence.</p>
+    <div class="tablewrap"><table id="perf"></table></div>
   </div>
 
-  <div id="results" class="card">
-    <div class="stats">
-      <div class="stat"><b id="s-n">0</b><span>cytosines scored</span></div>
-      <div class="stat"><b id="s-m">0</b><span>predicted 5mC</span></div>
-      <div class="stat"><b id="s-mode">–</b><span>mode</span></div>
-    </div>
-    <div id="track"></div>
-    <div class="row" style="margin: 4px 0 12px;"><button id="dl" class="ghost">Download CSV</button></div>
-    <div class="tablewrap"><table id="tbl"></table></div>
-    <p class="models">prob_5mC is the ensemble of Random Forest, XGBoost, LightGBM, fine-tuned DNABERT and DNABERT-BiLSTM, trained separately for each species.</p>
+  <div class="card">
+    <h2>Instructions for users</h2>
+    <ol class="steps">
+      <li><b>Prepare input.</b> FASTA or plain sequence (A, C, G, T). A 41-bp sequence with C at position 21 is scored as one site; a longer sequence is scanned and every C on both strands with 20 bp on each side is scored.</li>
+      <li><b>Choose the model:</b> <i class="sp">O. rufipogon</i>, <i class="sp">Ae. tauschii</i> or both.</li>
+      <li><b>Run prediction.</b> Results show each cytosine's position, strand, context (CG/CHG/CHH), the probability from each model and the ensemble call. Download them as CSV.</li>
+      <li><b>Large inputs</b> (over 20,000 bp) should be run with the command-line tool (see <a href="#resources">Resources</a>).</li>
+    </ol>
   </div>
+
+  <div class="card">
+    <h2>Citation</h2>
+    <p>Sinha D, Ghosh S, Sarkar A, Bhattacharjee S, Guha Majumdar S, Murmu S. WildEpiPred: prediction of DNA 5mC sites in the crop wild relatives <i class="sp">Oryza rufipogon</i> and <i class="sp">Aegilops tauschii</i>. <span class="muted">Manuscript in preparation.</span></p>
+  </div>
+</section>
+
+<!-- ============================================================ PREDICT -->
+<section class="page" id="page-predict">
+  <h1>5mC prediction</h1>
+  <p class="lead">Upload a FASTA file or paste sequences. 41-bp sites with C at position 21 are scored directly; longer sequences are scanned for every cytosine on both strands.</p>
+
+  <div class="card">
+    <div class="seg" role="group" aria-label="Input type">
+      <button type="button" id="m-paste" aria-pressed="true">Paste sequence</button>
+      <button type="button" id="m-file" aria-pressed="false">Upload FASTA file</button>
+    </div>
+    <div id="in-paste">
+      <label class="lbl" for="seq">FASTA or raw sequence</label>
+      <textarea id="seq" spellcheck="false" placeholder=">my_sequence&#10;ACGTTGCCGGAGCTCGACGG..."></textarea>
+    </div>
+    <div id="in-file" hidden>
+      <label class="lbl" for="file">FASTA file (.fasta, .fa, .fna, .txt)</label>
+      <div class="drop" id="drop" tabindex="0">Drop a FASTA file here or <u>choose a file</u><br><span class="small" id="fname"></span></div>
+      <input type="file" id="file" accept=".fasta,.fa,.fna,.fas,.txt" hidden>
+    </div>
+    <div class="hint">Limit on this server: 20,000 bp per job. <a href="#" id="ex1">Load example region</a> · <a href="#" id="ex2">Load example 41-bp sites</a></div>
+
+    <h3 style="margin-top:20px">Reference model</h3>
+    <div class="species">
+      <label><input type="radio" name="sp" value="rufipogon" checked><span><i class="sp">Oryza rufipogon</i><small>wild rice</small></span></label>
+      <label><input type="radio" name="sp" value="tauschii"><span><i class="sp">Aegilops tauschii</i><small>wild wheat (D-genome donor)</small></span></label>
+      <label><input type="radio" name="sp" value="both"><span>Both models<small>run both and compare</small></span></label>
+    </div>
+
+    <div class="row">
+      <div class="field"><label class="lbl" for="mode">Mode</label>
+        <select id="mode"><option value="auto">Auto-detect</option><option value="site">41-bp sites (C at position 21)</option><option value="scan">Scan every C</option></select></div>
+      <div class="field"><label class="lbl" for="thr">Threshold</label><input id="thr" type="number" min="0.05" max="0.95" step="0.05" value="0.5" style="width:100px"></div>
+      <button id="run"><span class="spin" id="spin"></span><span id="runtxt">Run prediction</span></button>
+      <button class="ghost" id="clear" type="button">Clear</button>
+    </div>
+    <div id="err" class="err" role="alert"></div>
+  </div>
+
+  <div id="results"></div>
+</section>
+
+<!-- ============================================================ RESOURCES -->
+<section class="page" id="page-resources">
+  <h1>Resources</h1>
+  <p class="lead">Example data, the training and testing datasets, and the command-line version of WildEpiPred.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h2>Example data</h2>
+      <p>Example inputs with their WildEpiPred output: a 600-bp <i class="sp">O. rufipogon</i> genomic region (scan mode) and 41-bp test sites for both species (site mode).</p>
+      <a class="btn" href="downloads/WildEpiPred_example_data.zip" download>Download example data (zip, 95 KB)</a>
+    </div>
+    <div class="card">
+      <h2>Training and testing datasets</h2>
+      <p>The four 41-bp datasets (5mC positive and negative for each species), split into training and independent test sets, in FASTA format.</p>
+      <a class="btn" href="downloads/WildEpiPred_5mC_datasets.zip" download>Download datasets (zip, 4.3 MB)</a>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Dataset summary</h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Species</th><th>Class</th><th class="num">Training</th><th class="num">Test</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td><i class="sp">O. rufipogon</i></td><td>5mC (positive)</td><td class="num">42,578</td><td class="num">9,868</td><td>Whole-genome bisulfite sequencing (2 samples)</td></tr>
+        <tr><td><i class="sp">O. rufipogon</i></td><td>non-5mC (negative)</td><td class="num">42,578</td><td class="num">9,868</td><td>CDS windows, C at centre, CHG motif, &lt; 60% identity</td></tr>
+        <tr><td><i class="sp">Ae. tauschii</i></td><td>5mC (positive)</td><td class="num">34,742</td><td class="num">8,041</td><td>Bisulfite sequencing (2 samples)</td></tr>
+        <tr><td><i class="sp">Ae. tauschii</i></td><td>non-5mC (negative)</td><td class="num">34,742</td><td class="num">8,041</td><td>CDS windows, C at centre, CHG motif, &lt; 60% identity</td></tr>
+      </tbody>
+    </table></div>
+    <p class="small muted" style="margin-top:12px">5mC sites: binomial test p &lt; 0.01, methylation level ≥ 0.5, coverage ≥ 5; CG, CHG and CHH merged. Redundancy removed with CD-HIT-EST (90%); train/test split cluster-disjoint at 80% identity. Negative windows have no methylated read at the centre cytosine in the bisulfite data.</p>
+  </div>
+  <div class="card">
+    <h2>Command-line tool</h2>
+    <p>For genomes or large sequence sets, run WildEpiPred locally (CPU, CUDA or Apple GPU). Source code and models: <a href="https://github.com/diprosinha/WildEpiPred" target="_blank" rel="noopener">github.com/diprosinha/WildEpiPred</a>.</p>
+    <pre class="code">git lfs install
+git clone https://github.com/diprosinha/WildEpiPred.git
+cd WildEpiPred
+conda env create -f environment.yml &amp;&amp; conda activate wildepipred
+python wildepipred.py predict --species rufipogon --input my_seqs.fasta --out predictions.csv</pre>
+    <h3>Programmatic access</h3>
+    <p class="small muted">This server also accepts JSON requests:</p>
+    <pre class="code" id="apicode">curl -X POST <span class="origin"></span>/predict -H "Content-Type: application/json" \
+  -d '{"species": "rufipogon", "sequences": "&gt;s1\nGTGTATGATGGGAGGTGGGCCGATTCAGTTTTTTCTACGGG"}'</pre>
+  </div>
+</section>
+
+<!-- ============================================================ DEVELOPERS -->
+<section class="page" id="page-developers">
+  <h1>Developers</h1>
+  <p class="lead">WildEpiPred was developed by:</p>
+  <div class="grid g3" id="people"></div>
+</section>
+
+<!-- ============================================================ CONTACT -->
+<section class="page" id="page-contact">
+  <h1>Contact</h1>
+  <p class="lead">For questions, bug reports or collaboration, please contact the authors below or open an issue on GitHub.</p>
+  <div class="grid g2">
+    <div class="card person">
+      <div class="avatar" aria-hidden="true">DS</div>
+      <div><h3>Dipro Sinha</h3><div class="role">Post Doctoral Fellow</div>
+        <div class="aff">Department of Veterinary and Biomedical Sciences, South Dakota State University, Brookings, SD 57007, USA</div></div>
+    </div>
+    <div class="card person">
+      <div class="avatar" aria-hidden="true">SM</div>
+      <div><h3>Sneha Murmu</h3><div class="role">Scientist</div>
+        <div class="aff">Division of Agricultural Bioinformatics, ICAR–Indian Agricultural Statistics Research Institute, Pusa, New Delhi 110012, India</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Report an issue</h2>
+    <p>Bug reports and feature requests: <a href="https://github.com/diprosinha/WildEpiPred/issues" target="_blank" rel="noopener">github.com/diprosinha/WildEpiPred/issues</a></p>
+  </div>
+</section>
 </main>
+
+<footer><div>
+  <span>WildEpiPred · DNA 5mC prediction for crop wild relatives</span>
+  <span>Sinha D, Ghosh S, Sarkar A, Bhattacharjee S, Guha Majumdar S, Murmu S</span>
+</div></footer>
+
 <script>
 const $ = id => document.getElementById(id);
-const EXAMPLE = ">example_region\nTTGCCGGAGCTCGACGGCGGCGGCGAGGTGGAGCGGCAGCAGCCGCCGGCGTTGCGGCTCCTGCTCATCGGCGGCGGCGTAGTGGAGGCGGCGAGCGCAGGCGGCGGCGAGGCGG\n";
-let lastCsv = "";
-$("ex").onclick = () => { $("seq").value = EXAMPLE; $("mode").value = "auto"; };
-$("dl").onclick = () => {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([lastCsv], {type: "text/csv"}));
-  a.download = "wildepipred_predictions.csv"; a.click();
-};
-$("run").onclick = async () => {
-  $("err").style.display = "none"; $("run").disabled = true; $("run").textContent = "Predicting…";
-  try {
-    const r = await fetch("/predict", {method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({sequences: $("seq").value, species: $("species").value, mode: $("mode").value, threshold: $("thr").value})});
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error || "prediction failed");
-    show(d);
-  } catch (e) { $("err").textContent = e.message; $("err").style.display = "block"; }
-  finally { $("run").disabled = false; $("run").textContent = "Predict"; }
-};
-function esc(s) { return String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c])); }
-function show(d) {
-  lastCsv = d.csv;
-  $("s-n").textContent = d.n.toLocaleString(); $("s-m").textContent = d.n_5mC.toLocaleString(); $("s-mode").textContent = d.mode;
-  const c = d.columns, ip = c.indexOf("prob_5mC"), ipred = c.indexOf("prediction");
-  let h = "<thead><tr>" + c.map(x => `<th>${esc(x)}</th>`).join("") + "</tr></thead><tbody>";
-  for (const row of d.rows.slice(0, 5000)) {
-    h += "<tr>" + row.map((v, j) => {
-      if (j === ipred) return `<td><span class="tag"><span class="dot" style="background:var(${v === "5mC" ? "--meth" : "--unmeth"})"></span>${esc(v)}</span></td>`;
-      if (typeof v === "number" && !Number.isInteger(v)) return `<td class="num">${v.toFixed(3)}</td>`;
-      return `<td class="${c[j] === "window" ? "win" : ""}">${esc(v)}</td>`;
-    }).join("") + "</tr>";
-  }
-  $("tbl").innerHTML = h + "</tbody>";
-  drawTrack(d, ip);
-  $("results").style.display = "block";
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+
+/* ---------------- routing */
+const PAGES = ["home", "predict", "resources", "developers", "contact"];
+function route() {
+  const p = PAGES.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
+  PAGES.forEach(x => $("page-" + x).classList.toggle("active", x === p));
+  document.querySelectorAll(".tabs a").forEach(a => a.setAttribute("aria-current", a.getAttribute("href") === "#" + p ? "page" : "false"));
+  document.title = p === "home" ? "WildEpiPred" : `${p[0].toUpperCase() + p.slice(1)} · WildEpiPred`;
+  window.scrollTo(0, 0);
 }
-function drawTrack(d, ip) {
-  // probability along the sequence (scan mode, first sequence only)
-  const t = $("track"); t.innerHTML = "";
-  if (d.mode !== "scan" || !d.rows.length) return;
-  const first = d.rows[0][0], rows = d.rows.filter(r => r[0] === first);
-  const W = Math.max(320, t.clientWidth || 900), H = 150, L = 34, R = 10, T = 10, B = 26;
-  const xmax = Math.max(...rows.map(r => r[1])), xmin = Math.min(...rows.map(r => r[1]));
-  const x = p => L + (p - xmin) / Math.max(1, xmax - xmin) * (W - L - R), y = v => T + (1 - v) * (H - T - B);
+addEventListener("hashchange", route); route();
+document.querySelectorAll(".origin").forEach(e => e.textContent = location.origin);
+
+/* ---------------- performance table */
+const PERF = [
+  ["O. rufipogon", "Random Forest", .804, .830, .779, .609, .887, .883],
+  ["", "XGBoost", .816, .824, .807, .632, .899, .899],
+  ["", "LightGBM", .815, .825, .806, .630, .899, .899],
+  ["", "DNABERT (fine-tuned)", .833, .813, .852, .666, .918, .916],
+  ["", "DNABERT-BiLSTM", .818, .799, .838, .637, .906, .904],
+  ["", "WildEpiPred ensemble", .835, .819, .852, .671, .920, .918],
+  ["Ae. tauschii", "Random Forest", .713, .710, .717, .426, .792, .803],
+  ["", "XGBoost", .722, .704, .740, .445, .805, .816],
+  ["", "LightGBM", .723, .706, .740, .446, .805, .816],
+  ["", "DNABERT (fine-tuned)", .745, .737, .754, .491, .836, .843],
+  ["", "DNABERT-BiLSTM", .737, .727, .748, .474, .821, .831],
+  ["", "WildEpiPred ensemble", .750, .740, .760, .500, .840, .848]];
+$("perf").innerHTML = "<thead><tr><th>Species</th><th>Model</th>" + ["ACC", "Sn", "Sp", "MCC", "AUROC", "AUPRC"].map(h => `<th class="num">${h}</th>`).join("") + "</tr></thead><tbody>" +
+  PERF.map(r => `<tr class="${r[1].startsWith("WildEpiPred") ? "best" : ""}"><td><i class="sp">${r[0]}</i></td><td>${r[1]}</td>` + r.slice(2).map(v => `<td class="num">${v.toFixed(3)}</td>`).join("") + "</tr>").join("") + "</tbody>";
+
+/* ---------------- developers */
+const PEOPLE = [
+  ["Dipro Sinha", "Post Doctoral Fellow", "Department of Veterinary and Biomedical Sciences, South Dakota State University, Brookings, SD 57007, USA", ""],
+  ["Subham Ghosh", "Ph.D. Scholar", "Discipline of Bioinformatics, ICAR–Indian Agricultural Research Institute, Pusa, New Delhi 110012, India", ""],
+  ["Abhik Sarkar", "Ph.D. Scholar", "Discipline of Bioinformatics, ICAR–Indian Agricultural Research Institute, Pusa, New Delhi 110012, India", ""],
+  ["Sougata Bhattacharjee", "Scientist", "School of Crop Sciences, ICAR–Indian Agricultural Research Institute, Jharkhand, Hazaribagh, India", ""],
+  ["Sayanti Guha Majumdar", "Scientist", "ICAR–Indian Sugarcane Research Institute, Lucknow, India", "https://scholar.google.com/citations?user=wjAkz68AAAAJ&hl=en"],
+  ["Sneha Murmu", "Scientist", "Division of Agricultural Bioinformatics, ICAR–Indian Agricultural Statistics Research Institute, Pusa, New Delhi 110012, India", ""]];
+$("people").innerHTML = PEOPLE.map(([n, r, a, s]) => `<div class="card person"><div class="avatar" aria-hidden="true">${n.split(" ").filter((w, i, x) => i === 0 || i === x.length - 1).map(w => w[0]).join("")}</div>
+  <div><h3>${esc(n)}</h3><div class="role">${esc(r)}</div><div class="aff">${esc(a)}</div>${s ? `<a href="${s}" target="_blank" rel="noopener">Google Scholar</a>` : ""}</div></div>`).join("");
+
+/* ---------------- predict: input */
+let fileText = "", inputMode = "paste";
+function setMode(m) {
+  inputMode = m; $("m-paste").setAttribute("aria-pressed", m === "paste"); $("m-file").setAttribute("aria-pressed", m === "file");
+  $("in-paste").hidden = m !== "paste"; $("in-file").hidden = m !== "file";
+}
+$("m-paste").onclick = () => setMode("paste"); $("m-file").onclick = () => setMode("file");
+function loadFile(f) {
+  if (!f) return;
+  if (f.size > 2e6) { showErr("File is larger than 2 MB; use the command-line tool for large inputs."); return; }
+  const r = new FileReader(); r.onload = () => { fileText = r.result; $("fname").textContent = `${f.name} (${(f.size / 1024).toFixed(1)} KB)`; }; r.readAsText(f);
+}
+$("drop").onclick = () => $("file").click();
+$("drop").onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("file").click(); } };
+$("file").onchange = e => loadFile(e.target.files[0]);
+["dragover", "dragenter"].forEach(ev => $("drop").addEventListener(ev, e => { e.preventDefault(); $("drop").classList.add("over"); }));
+["dragleave", "drop"].forEach(ev => $("drop").addEventListener(ev, e => { e.preventDefault(); $("drop").classList.remove("over"); }));
+$("drop").addEventListener("drop", e => loadFile(e.dataTransfer.files[0]));
+
+const EX_REGION = ">OR_chr1_7748505_7749104\nCGATCTACTCCCATAAGCAGATTTATAGCTCTTGGAACTTTGGAAGAATGGTAGTTGGGTGACATAATGCTACTAGATGCATGGGCACGGCCAACATGCCCTGATCAGGGATATGGCCGGGGTCTTTTGGCTCATAGCATCATACTATTACACCTAGCTAGAGATTCCTAGTTAGCTAGAAAATGACAAGTTGATTATTCGTGTGGTCCTTTTATATATCTCTGCTACTTAAAAACATGGTTGTTCTCTTTTCAAACCATCGCGTGTAATGTCAGAAAACCCCGTAGAAAAAACTGAATCGGCCCACCTCCCATCATACACAATTTTTCCCCAGCTAAAAATTAACTAGCTAGAAAAACTCGATAGAAAAAATAAACCCTATATAAAACTATTATTCCTTGAAATCCCATTGCAACGCATGGGCATAGCGCTAGTGAGTTTGAAAAATTGGTGAGATTTTCCTATTGCCATCATCTCTTGAAACGACTCTTCAAATTAATAAAATAATAAAATGGCGTCACTGTTAATGTTATATGTGCATAAATTCCTTTTGCTCTTAATTTGATTTTAATTGTGGCATTTCTCTAATGTCCTAGTTAA\n";
+const EX_SITES = ">Oryza_rufipogon_1:7748805:-\nGTGTATGATGGGAGGTGGGCCGATTCAGTTTTTTCTACGGG\n>Oryza_rufipogon_12:22824527:+\nCATAGACCAACGAATTCATTCGAACCATCGGAGCACTGTGA\n>Oryza_rufipogon_12:19501887:+\nCTGCCGGCACCGGTGCTGGCCGTGCAGGTGACGGAGTTGGC\n>Oryza_rufipogon_4:23437147:-\nCTCATCACCACCGCCGTCTCCGCCGACCTCGGCACGCACAG\n";
+$("ex1").onclick = e => { e.preventDefault(); setMode("paste"); $("seq").value = EX_REGION; $("mode").value = "auto"; };
+$("ex2").onclick = e => { e.preventDefault(); setMode("paste"); $("seq").value = EX_SITES; $("mode").value = "auto"; };
+$("clear").onclick = () => { $("seq").value = ""; fileText = ""; $("fname").textContent = ""; $("file").value = ""; $("results").innerHTML = ""; $("err").style.display = "none"; };
+function showErr(m) { $("err").textContent = m; $("err").style.display = "block"; }
+
+/* ---------------- predict: run */
+$("run").onclick = async () => {
+  $("err").style.display = "none";
+  const text = inputMode === "paste" ? $("seq").value : fileText;
+  if (!text.trim()) { showErr(inputMode === "paste" ? "Paste a sequence first." : "Choose a FASTA file first."); return; }
+  $("run").disabled = true; $("spin").style.display = "inline-block"; $("runtxt").textContent = "Running…";
+  try {
+    const r = await fetch("predict", {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({sequences: text, species: document.querySelector("input[name=sp]:checked").value, mode: $("mode").value, threshold: $("thr").value})});
+    let d; try { d = await r.json(); } catch { throw new Error(`server error (${r.status})`); }
+    if (!r.ok) throw new Error(d.error || "prediction failed");
+    render(d); $("results").scrollIntoView({behavior: "smooth", block: "start"});
+  } catch (e) { showErr(e.message); }
+  finally { $("run").disabled = false; $("spin").style.display = "none"; $("runtxt").textContent = "Run prediction"; }
+};
+
+/* ---------------- predict: results */
+function render(d) {
   const thr = parseFloat($("thr").value);
-  let s = `<svg width="${W}" height="${H}" role="img" aria-label="5mC probability along ${esc(first)}">`;
+  $("results").innerHTML = Object.entries(d.results).map(([k, res]) => {
+    const c = res.columns, ip = c.indexOf("prob_5mC"), ipred = c.indexOf("prediction");
+    const ids = [...new Set(res.rows.map(r => r[0]))];
+    let html = `<div class="card"><h2>Model: <i class="sp">${esc(res.species)}</i></h2>
+      <div class="stats"><div class="stat"><b>${res.n.toLocaleString()}</b><span>cytosines scored</span></div>
+      <div class="stat"><b>${res.n_5mC.toLocaleString()}</b><span>predicted 5mC (≥ ${thr})</span></div>
+      <div class="stat"><b>${ids.length.toLocaleString()}</b><span>sequences</span></div>
+      <div class="stat"><b>${res.mode === "scan" ? "Scan" : "Site"}</b><span>mode</span></div></div>`;
+    if (res.mode === "scan") {
+      const pick = ids.slice(0, 5);
+      html += pick.map(id => track(id, res.rows.filter(r => r[0] === id), ip, thr) + seqView(id, d.sequences[id], res.rows.filter(r => r[0] === id), ip, thr)).join("");
+      if (ids.length > 5) html += `<p class="small muted">Tracks shown for the first 5 sequences; all results are in the table and CSV.</p>`;
+    }
+    const shown = res.rows.slice(0, 3000);
+    html += `<div class="row" style="margin:6px 0 12px"><button class="ghost" onclick="dl('${k}')">Download predictions (CSV)</button>
+      ${res.rows.length > shown.length ? `<span class="small muted">Showing the first ${shown.length.toLocaleString()} of ${res.rows.length.toLocaleString()} rows; the CSV has all.</span>` : ""}</div>
+      <div class="tablewrap" style="max-height:520px"><table><thead><tr>${c.map(x => `<th class="${["position", "RF", "XGBoost", "LightGBM", "DNABERT", "DNABERT-BiLSTM", "prob_5mC"].includes(x) ? "num" : ""}">${esc(x)}</th>`).join("")}</tr></thead><tbody>` +
+      shown.map(row => "<tr>" + row.map((v, j) => {
+        if (j === ipred) return `<td><span class="tag"><span class="dot" style="background:var(${v === "5mC" ? "--meth" : "--unmeth"})"></span>${esc(v)}</span></td>`;
+        if (typeof v === "number") return `<td class="num">${Number.isInteger(v) && j === 1 ? v : v.toFixed(3)}</td>`;
+        return `<td class="${c[j] === "window" ? "win" : ""}">${esc(v)}</td>`;
+      }).join("") + "</tr>").join("") + "</tbody></table></div>";
+    return html + "</div>";
+  }).join("");
+  window._csv = Object.fromEntries(Object.entries(d.results).map(([k, r]) => [k, r.csv]));
+}
+function dl(k) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([window._csv[k]], {type: "text/csv"}));
+  a.download = `WildEpiPred_${k}_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+}
+function track(id, rows, ip, thr) {
+  const W = Math.min(1040, Math.max(320, $("results").clientWidth - 50)), H = 150, L = 34, R = 10, T = 10, B = 26;
+  const xs = rows.map(r => r[1]), xmin = Math.min(...xs), xmax = Math.max(...xs);
+  const x = p => L + (p - xmin) / Math.max(1, xmax - xmin) * (W - L - R), y = v => T + (1 - v) * (H - T - B);
+  let s = `<svg width="100%" viewBox="0 0 ${W} ${H}" role="img" aria-label="5mC probability along ${esc(id)}">`;
   for (const v of [0, 0.5, 1]) s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
   s += `<line x1="${L}" x2="${W - R}" y1="${y(thr)}" y2="${y(thr)}" stroke="var(--ink-3)" stroke-dasharray="3 3"/>`;
   for (const r of rows) {
     const v = r[ip], col = v >= thr ? "var(--meth)" : "var(--unmeth)";
-    s += `<line x1="${x(r[1])}" x2="${x(r[1])}" y1="${y(0)}" y2="${y(v)}" stroke="${col}" stroke-width="2" stroke-linecap="round"><title>${esc(r[1])} ${esc(r[2])} ${esc(r[3])}: ${v.toFixed(3)}</title></line>`;
+    s += `<line x1="${x(r[1])}" x2="${x(r[1])}" y1="${y(0)}" y2="${y(v)}" stroke="${col}" stroke-width="2" stroke-linecap="round"><title>${r[1]} (${r[2]}) ${r[3]}: ${v.toFixed(3)}</title></line>`;
   }
   s += `<text x="${L}" y="${H - 6}">${xmin}</text><text x="${W - R}" y="${H - 6}" text-anchor="end">${xmax} bp</text></svg>`;
-  t.innerHTML = `<div class="legend"><span class="tag"><span class="dot" style="background:var(--meth)"></span>5mC</span><span class="tag"><span class="dot" style="background:var(--unmeth)"></span>non-5mC</span><span>${esc(first)}: probability per cytosine (both strands)</span></div>` + s;
+  return `<h3 style="margin-top:8px">${esc(id)}</h3><div class="legend"><span class="tag"><span class="dot" style="background:var(--meth)"></span>5mC</span><span class="tag"><span class="dot" style="background:var(--unmeth)"></span>non-5mC</span><span>probability for each scored cytosine (both strands); dashed line = threshold</span></div>` + s;
+}
+function seqView(id, seq, rows, ip, thr) {
+  if (!seq) return "";
+  const call = {}; rows.forEach(r => call[r[1]] = r[ip] >= thr ? (r[2] === "+" ? "m" : "mr") : "u");
+  let out = "";
+  for (let i = 0; i < seq.length; i += 60) {
+    out += `<span class="co">${String(i + 1).padStart(6, " ")}  </span>`;
+    for (let j = i; j < Math.min(i + 60, seq.length); j++) { const k = call[j + 1]; out += k ? `<span class="${k}">${seq[j]}</span>` : seq[j]; }
+    out += "\n";
+  }
+  return `<details><summary>Sequence view</summary><div class="legend"><span class="tag"><span class="dot" style="background:var(--meth)"></span>5mC on + strand (C)</span><span class="tag"><span class="ring"></span>5mC on − strand (G)</span><span class="tag" style="color:var(--unmeth)">C/G scored, non-5mC</span></div><div class="seqview">${out}</div></details>`;
 }
 </script>
 </body>

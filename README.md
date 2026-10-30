@@ -1,3 +1,14 @@
+---
+title: WildEpiPred
+emoji: 🌾
+colorFrom: green
+colorTo: yellow
+sdk: docker
+app_port: 7860
+pinned: false
+short_description: DNA 5mC site prediction for O. rufipogon and Ae. tauschii
+---
+
 # WildEpiPred
 
 Prediction of DNA 5mC sites in two wild grasses, *Oryza rufipogon* and *Aegilops tauschii*.
@@ -29,11 +40,15 @@ python wildepipred.py predict --species tauschii  --input example/Aegilops_tausc
 Output CSV columns: `seq_id`, `position` (1-based on the input sequence; for `-` strand cytosines this is the position of the G), `strand`, `context` (CG/CHG/CHH),
 `window` (41 bp, read 5'→3' on the cytosine's strand), the probability from each model, `prob_5mC` (ensemble) and `prediction`.
 
-## Web interface (local)
+## Web server
+The web server (Home, Predict, Resources, Developers, Contact) runs locally with
 ```
 python wildepipred.py serve            # then open http://127.0.0.1:8501
 ```
-Paste FASTA or plain sequence, choose the species model, and get a results table, a probability track along the sequence (scan mode) and a CSV download. Web input is limited to 20,000 bp; use the command line for larger inputs.
+or as a Hugging Face Docker Space (`Dockerfile`, port 7860). Paste or upload FASTA, choose the *O. rufipogon*, *Ae. tauschii* or both models, and get a results table, a probability track and sequence view (scan mode) and a CSV download. Web input is limited to 20,000 bp per job (`WILDEPIPRED_MAX_BP`); use the command line for larger inputs. `POST /predict` accepts JSON (`species`, `sequences`, optional `mode`, `threshold`).
+
+## Authors
+Dipro Sinha, Subham Ghosh, Abhik Sarkar, Sougata Bhattacharjee, Sayanti Guha Majumdar, Sneha Murmu
 
 ## Models
 Per species, the ensemble combines five models, with weights chosen to minimise log-loss on the validation set:

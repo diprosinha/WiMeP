@@ -11,7 +11,7 @@ Input: FASTA (or CSV with a `sequence` column).
 
 usage:
   python wildepipred.py predict --species rufipogon --input seqs.fasta --out predictions.csv
-  python wildepipred.py serve   [--port 8501]            # local web interface at http://127.0.0.1:8501
+  python wildepipred.py serve   [--host 0.0.0.0] [--port 8501]   # web server (http://127.0.0.1:8501)
 """
 import argparse, functools, io, json, os, re, sys
 import numpy as np
@@ -25,7 +25,7 @@ SPECIES = {"rufipogon": "Oryza_rufipogon", "tauschii": "Aegilops_tauschii"}
 BASE_MODEL = os.path.join(HERE, "models", "dnabert_base")  # frozen zhihan1996/DNA_bert_6 (embeddings)
 MODELS = ["RF", "XGBoost", "LightGBM", "DNABERT", "DNABERT-BiLSTM"]
 HALF, COMP = 20, str.maketrans("ACGTN", "TGCAN")
-MAX_WEB_BP = 20000
+MAX_WEB_BP = int(os.environ.get("WILDEPIPRED_MAX_BP", 20000))
 
 
 def kmers(s, k=6):
@@ -165,43 +165,65 @@ def predict(df, sp, mode="auto", threshold=0.5, chunk=20000):
 
 
 # ---------------------------------------------------------------- CLI / web
-def serve(port):
+def serve(host, port):
+    """Web server: static site from web/ (pages, images, downloads) and POST /predict (JSON)."""
+    import mimetypes, threading
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-    page = open(os.path.join(HERE, "web", "index.html"), "rb").read()
+    from urllib.parse import unquote, urlparse
+    root = os.path.realpath(os.path.join(HERE, "web"))
+    lock = threading.Lock()  # one prediction at a time; the models are shared
+
+    def run(req):
+        sp = req.get("species")
+        if sp not in list(SPECIES) + ["both"]: raise ValueError("choose a species model")
+        df = read_input(req.get("sequences", "").strip() or ">")
+        df = df[df.sequence != ""]
+        if df.empty: raise ValueError("no sequence given")
+        if df.sequence.str.len().sum() > MAX_WEB_BP:
+            raise ValueError(f"web input is limited to {MAX_WEB_BP:,} bp; use the command-line tool for larger inputs")
+        out = {}
+        for s in (SPECIES if sp == "both" else [sp]):
+            with lock: res, mode = predict(df, s, req.get("mode", "auto"), float(req.get("threshold", 0.5)))
+            if res.empty: raise ValueError("no cytosine could be scored: each C needs 20 bp of A/C/G/T on both sides")
+            out[s] = dict(species=SPECIES[s].replace("_", " "), mode=mode, n=len(res), n_5mC=int((res.prediction == "5mC").sum()),
+                          columns=list(res.columns), rows=res.values.tolist(), csv=res.to_csv(index=False))
+        seqs = {r.seq_id: r.sequence for r in df.itertuples()}
+        return dict(results=out, sequences=seqs if sum(map(len, seqs.values())) <= MAX_WEB_BP else {})
 
     class H(BaseHTTPRequestHandler):
-        def _send(self, code, body, ctype):
+        def _send(self, code, body, ctype, extra=()):
             self.send_response(code); self.send_header("Content-Type", ctype); self.send_header("Content-Length", str(len(body)))
+            for k, v in extra: self.send_header(k, v)
             self.end_headers(); self.wfile.write(body)
 
         def do_GET(self):
-            self._send(200, page, "text/html; charset=utf-8") if self.path in ("/", "/index.html") else self._send(404, b"not found", "text/plain")
+            path = unquote(urlparse(self.path).path)
+            if path == "/health": return self._send(200, b"ok", "text/plain")
+            f = os.path.realpath(os.path.join(root, path.lstrip("/") or "index.html"))
+            if os.path.isdir(f): f = os.path.join(f, "index.html")
+            if not f.startswith(root + os.sep) or not os.path.isfile(f): return self._send(404, b"not found", "text/plain")
+            ctype = mimetypes.guess_type(f)[0] or "application/octet-stream"
+            if ctype.startswith("text/") or ctype.endswith(("javascript", "svg+xml", "json")): ctype += "; charset=utf-8"
+            extra = [("Content-Disposition", f'attachment; filename="{os.path.basename(f)}"')] if "/downloads/" in f else []
+            self._send(200, open(f, "rb").read(), ctype, extra)
 
         def do_POST(self):
-            if self.path != "/predict": return self._send(404, b"not found", "text/plain")
+            if urlparse(self.path).path != "/predict": return self._send(404, b"not found", "text/plain")
             try:
-                req = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
-                sp = req.get("species")
-                if sp not in SPECIES: raise ValueError("choose a species")
-                df = read_input(req.get("sequences", "").strip() or ">")
-                df = df[df.sequence != ""]
-                if df.empty: raise ValueError("no sequence given")
-                if df.sequence.str.len().sum() > MAX_WEB_BP: raise ValueError(f"web input is limited to {MAX_WEB_BP:,} bp; use the command line for more")
-                res, mode = predict(df, sp, req.get("mode", "auto"), float(req.get("threshold", 0.5)))
-                if res.empty: raise ValueError("no cytosine could be scored: each C needs 20 bp of A/C/G/T on both sides")
-                body = dict(mode=mode, n=len(res), n_5mC=int((res.prediction == "5mC").sum()), columns=list(res.columns),
-                            rows=res.values.tolist(), csv=res.to_csv(index=False))
+                n = int(self.headers.get("Content-Length", 0))
+                if n > 4 * MAX_WEB_BP + 100_000: raise ValueError(f"web input is limited to {MAX_WEB_BP:,} bp")
+                body = run(json.loads(self.rfile.read(n)))
                 self._send(200, json.dumps(body).encode(), "application/json")
             except Exception as e:  # report input errors to the page
                 self._send(400, json.dumps(dict(error=str(e))).encode(), "application/json")
 
         def log_message(self, *a): pass
 
-    print(f"loading models ...", flush=True)
+    print("loading models ...", flush=True)
     for sp in SPECIES: load_species(sp)
     base_bert()
-    print(f"WildEpiPred web interface: http://127.0.0.1:{port}  (Ctrl+C to stop)", flush=True)
-    ThreadingHTTPServer(("127.0.0.1", port), H).serve_forever()
+    print(f"WildEpiPred web server: http://{'127.0.0.1' if host in ('0.0.0.0', '') else host}:{port}  (Ctrl+C to stop)", flush=True)
+    ThreadingHTTPServer((host, port), H).serve_forever()
 
 
 def main():
@@ -213,10 +235,11 @@ def main():
     p.add_argument("--out", required=True, help="output CSV")
     p.add_argument("--mode", default="auto", choices=["auto", "site", "scan"])
     p.add_argument("--threshold", type=float, default=0.5)
-    s = sub.add_parser("serve", help="local web interface")
-    s.add_argument("--port", type=int, default=8501)
+    s = sub.add_parser("serve", help="web server (local, or 0.0.0.0 in the Hugging Face Space container)")
+    s.add_argument("--host", default="127.0.0.1")
+    s.add_argument("--port", type=int, default=int(os.environ.get("PORT", 8501)))
     a = ap.parse_args()
-    if a.cmd == "serve": return serve(a.port)
+    if a.cmd == "serve": return serve(a.host, a.port)
     if not os.path.exists(a.input): sys.exit(f"input not found: {a.input}")
     res, mode = predict(read_input(a.input), a.species, a.mode, a.threshold)
     res.to_csv(a.out, index=False)
