@@ -54,7 +54,8 @@ p { margin: 0 0 12px; }
 .small { font-size: 14px; }
 
 /* home */
-.hero { padding: 24px 0 28px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 32px; align-items: center; }
+.hero { padding: 16px 0 28px; max-width: 820px; }
+img.pipeline { width: 100%; height: auto; display: block; border-radius: 12px; border: 1px solid var(--line); }
 @media (max-width: 820px) { .hero { grid-template-columns: 1fr; } }
 .pill { display: inline-block; font-size: 13px; font-weight: 600; color: var(--brand-2); background: var(--ok-bg); padding: 3px 10px; border-radius: 999px; margin-bottom: 14px; }
 .cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
@@ -151,15 +152,11 @@ footer div { max-width: 1120px; margin: 0 auto; padding: 20px 16px 28px; display
       <p class="lead">An ensemble deep-learning and machine-learning predictor of DNA 5-methylcytosine (5mC) sites in the wild rice <i class="sp">Oryza rufipogon</i> and the wild wheat progenitor <i class="sp">Aegilops tauschii</i>.</p>
       <div class="cta"><a class="btn" href="#predict">Start prediction</a><a class="btn ghost" href="#resources">Data &amp; downloads</a></div>
     </div>
-    <div class="flow" aria-label="WildEpiPred workflow">
-      <div><b>Input</b>FASTA: 41-bp sequences with the candidate C at position 21</div>
-      <div class="arrow">↓</div>
-      <div><b>Encoding</b>NCP · GC content · binary · oligonucleotide frequency · PSTNPss · EIIP · DNABERT-6 embeddings</div>
-      <div class="arrow">↓</div>
-      <div><b>Models</b>Random Forest · XGBoost · LightGBM · fine-tuned DNABERT · DNABERT-BiLSTM</div>
-      <div class="arrow">↓</div>
-      <div><b>Optimised ensemble</b>species-specific probability that the central cytosine is 5mC</div>
-    </div>
+  </div>
+
+  <div class="card">
+    <h2>Model pipeline</h2>
+    <a href="images/pipeline.svg" target="_blank" rel="noopener" title="Open full size"><img class="pipeline" src="images/pipeline.svg" alt="WildEpiPred pipeline: bisulfite methylome data, 41-bp positive and negative windows, cluster-disjoint split, feature encoding, entropy-based and stepwise feature selection, machine-learning and deep-learning models, optimised ensemble giving 5mC or non-5mC"></a>
   </div>
 
   <div class="grid g2">
