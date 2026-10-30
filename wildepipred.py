@@ -66,7 +66,7 @@ def windows(df, mode="auto"):
     if mode == "site":
         for r in df.itertuples():
             if len(r.sequence) != 41 or r.sequence[HALF] != "C":
-                raise ValueError(f"{r.seq_id}: site mode needs 41-bp sequences with C at position 21")
+                raise ValueError(f"{r.seq_id}: each sequence must be 41 bp with C at position 21 (got {len(r.sequence)} bp)")
             if re.fullmatch("[ACGT]+", r.sequence):
                 rows.append((r.seq_id, 21, "+", context(r.sequence), r.sequence))
     else:

@@ -152,13 +152,13 @@ footer div { max-width: 1120px; margin: 0 auto; padding: 20px 16px 28px; display
       <div class="cta"><a class="btn" href="#predict">Start prediction</a><a class="btn ghost" href="#resources">Data &amp; downloads</a></div>
     </div>
     <div class="flow" aria-label="WildEpiPred workflow">
-      <div><b>Input</b>FASTA: 41-bp sites or longer sequences (every C on both strands is scanned)</div>
+      <div><b>Input</b>FASTA: 41-bp sequences with the candidate C at position 21</div>
       <div class="arrow">↓</div>
       <div><b>Encoding</b>NCP · GC content · binary · oligonucleotide frequency · PSTNPss · EIIP · DNABERT-6 embeddings</div>
       <div class="arrow">↓</div>
       <div><b>Models</b>Random Forest · XGBoost · LightGBM · fine-tuned DNABERT · DNABERT-BiLSTM</div>
       <div class="arrow">↓</div>
-      <div><b>Optimised ensemble</b>species-specific probability of 5mC for every cytosine</div>
+      <div><b>Optimised ensemble</b>species-specific probability that the central cytosine is 5mC</div>
     </div>
   </div>
 
@@ -176,19 +176,13 @@ footer div { max-width: 1120px; margin: 0 auto; padding: 20px 16px 28px; display
     </div>
   </div>
 
-  <div class="card">
-    <h2>Performance on independent test data</h2>
-    <p class="muted small">Cluster-disjoint test sets: <i class="sp">O. rufipogon</i> 9,868 5mC + 9,868 non-5mC; <i class="sp">Ae. tauschii</i> 8,041 + 8,041. No test sequence is ≥ 80% identical to a training sequence.</p>
-    <div class="tablewrap"><table id="perf"></table></div>
-  </div>
 
   <div class="card">
     <h2>Instructions for users</h2>
     <ol class="steps">
-      <li><b>Prepare input.</b> FASTA or plain sequence (A, C, G, T). A 41-bp sequence with C at position 21 is scored as one site; a longer sequence is scanned and every C on both strands with 20 bp on each side is scored.</li>
+      <li><b>Prepare input.</b> Each sequence must be <b>41 bp</b> (A, C, G, T) with the cytosine to be scored at position 21, in FASTA or as plain sequence.</li>
       <li><b>Choose the model:</b> <i class="sp">O. rufipogon</i>, <i class="sp">Ae. tauschii</i> or both.</li>
-      <li><b>Run prediction.</b> Results show each cytosine's position, strand, context (CG/CHG/CHH), the probability from each model and the ensemble call. Download them as CSV.</li>
-      <li><b>Large inputs</b> (over 20,000 bp) should be run with the command-line tool (see <a href="#resources">Resources</a>).</li>
+      <li><b>Run prediction.</b> Results show each sequence's context (CG/CHG/CHH), the probability from each model and the ensemble call. Download them as CSV.</li>
     </ol>
   </div>
 
@@ -201,7 +195,7 @@ footer div { max-width: 1120px; margin: 0 auto; padding: 20px 16px 28px; display
 <!-- ============================================================ PREDICT -->
 <section class="page" id="page-predict">
   <h1>5mC prediction</h1>
-  <p class="lead">Upload a FASTA file or paste sequences. 41-bp sites with C at position 21 are scored directly; longer sequences are scanned for every cytosine on both strands.</p>
+  <p class="lead">Upload a FASTA file or paste sequences. Each sequence must be 41 bp with the cytosine to be scored at position 21.</p>
 
   <div class="card">
     <div class="seg" role="group" aria-label="Input type">
@@ -217,7 +211,7 @@ footer div { max-width: 1120px; margin: 0 auto; padding: 20px 16px 28px; display
       <div class="drop" id="drop" tabindex="0">Drop a FASTA file here or <u>choose a file</u><br><span class="small" id="fname"></span></div>
       <input type="file" id="file" accept=".fasta,.fa,.fna,.fas,.txt" hidden>
     </div>
-    <div class="hint">Limit on this server: 20,000 bp per job. <a href="#" id="ex1">Load example region</a> · <a href="#" id="ex2">Load example 41-bp sites</a></div>
+    <div class="hint">Input: 41-bp sequences (A, C, G, T) with C at position 21. <a href="#" id="ex2">Load example sequences</a></div>
 
     <h3 style="margin-top:20px">Reference model</h3>
     <div class="species">
@@ -227,8 +221,6 @@ footer div { max-width: 1120px; margin: 0 auto; padding: 20px 16px 28px; display
     </div>
 
     <div class="row">
-      <div class="field"><label class="lbl" for="mode">Mode</label>
-        <select id="mode"><option value="auto">Auto-detect</option><option value="site">41-bp sites (C at position 21)</option><option value="scan">Scan every C</option></select></div>
       <div class="field"><label class="lbl" for="thr">Threshold</label><input id="thr" type="number" min="0.05" max="0.95" step="0.05" value="0.5" style="width:100px"></div>
       <button id="run"><span class="spin" id="spin"></span><span id="runtxt">Run prediction</span></button>
       <button class="ghost" id="clear" type="button">Clear</button>
@@ -313,22 +305,6 @@ function route() {
 addEventListener("hashchange", route); route();
 document.querySelectorAll(".origin").forEach(e => e.textContent = location.origin);
 
-/* ---------------- performance table */
-const PERF = [
-  ["O. rufipogon", "Random Forest", .804, .830, .779, .609, .887, .883],
-  ["", "XGBoost", .816, .824, .807, .632, .899, .899],
-  ["", "LightGBM", .815, .825, .806, .630, .899, .899],
-  ["", "DNABERT (fine-tuned)", .833, .813, .852, .666, .918, .916],
-  ["", "DNABERT-BiLSTM", .818, .799, .838, .637, .906, .904],
-  ["", "WildEpiPred ensemble", .835, .819, .852, .671, .920, .918],
-  ["Ae. tauschii", "Random Forest", .713, .710, .717, .426, .792, .803],
-  ["", "XGBoost", .722, .704, .740, .445, .805, .816],
-  ["", "LightGBM", .723, .706, .740, .446, .805, .816],
-  ["", "DNABERT (fine-tuned)", .745, .737, .754, .491, .836, .843],
-  ["", "DNABERT-BiLSTM", .737, .727, .748, .474, .821, .831],
-  ["", "WildEpiPred ensemble", .750, .740, .760, .500, .840, .848]];
-$("perf").innerHTML = "<thead><tr><th>Species</th><th>Model</th>" + ["ACC", "Sn", "Sp", "MCC", "AUROC", "AUPRC"].map(h => `<th class="num">${h}</th>`).join("") + "</tr></thead><tbody>" +
-  PERF.map(r => `<tr class="${r[1].startsWith("WildEpiPred") ? "best" : ""}"><td><i class="sp">${r[0]}</i></td><td>${r[1]}</td>` + r.slice(2).map(v => `<td class="num">${v.toFixed(3)}</td>`).join("") + "</tr>").join("") + "</tbody>";
 
 /* ---------------- developers */
 const PEOPLE = [
@@ -360,10 +336,8 @@ $("file").onchange = e => loadFile(e.target.files[0]);
 ["dragleave", "drop"].forEach(ev => $("drop").addEventListener(ev, e => { e.preventDefault(); $("drop").classList.remove("over"); }));
 $("drop").addEventListener("drop", e => loadFile(e.dataTransfer.files[0]));
 
-const EX_REGION = ">OR_chr1_7748505_7749104\nCGATCTACTCCCATAAGCAGATTTATAGCTCTTGGAACTTTGGAAGAATGGTAGTTGGGTGACATAATGCTACTAGATGCATGGGCACGGCCAACATGCCCTGATCAGGGATATGGCCGGGGTCTTTTGGCTCATAGCATCATACTATTACACCTAGCTAGAGATTCCTAGTTAGCTAGAAAATGACAAGTTGATTATTCGTGTGGTCCTTTTATATATCTCTGCTACTTAAAAACATGGTTGTTCTCTTTTCAAACCATCGCGTGTAATGTCAGAAAACCCCGTAGAAAAAACTGAATCGGCCCACCTCCCATCATACACAATTTTTCCCCAGCTAAAAATTAACTAGCTAGAAAAACTCGATAGAAAAAATAAACCCTATATAAAACTATTATTCCTTGAAATCCCATTGCAACGCATGGGCATAGCGCTAGTGAGTTTGAAAAATTGGTGAGATTTTCCTATTGCCATCATCTCTTGAAACGACTCTTCAAATTAATAAAATAATAAAATGGCGTCACTGTTAATGTTATATGTGCATAAATTCCTTTTGCTCTTAATTTGATTTTAATTGTGGCATTTCTCTAATGTCCTAGTTAA\n";
 const EX_SITES = ">Oryza_rufipogon_1:7748805:-\nGTGTATGATGGGAGGTGGGCCGATTCAGTTTTTTCTACGGG\n>Oryza_rufipogon_12:22824527:+\nCATAGACCAACGAATTCATTCGAACCATCGGAGCACTGTGA\n>Oryza_rufipogon_12:19501887:+\nCTGCCGGCACCGGTGCTGGCCGTGCAGGTGACGGAGTTGGC\n>Oryza_rufipogon_4:23437147:-\nCTCATCACCACCGCCGTCTCCGCCGACCTCGGCACGCACAG\n";
-$("ex1").onclick = e => { e.preventDefault(); setMode("paste"); $("seq").value = EX_REGION; $("mode").value = "auto"; };
-$("ex2").onclick = e => { e.preventDefault(); setMode("paste"); $("seq").value = EX_SITES; $("mode").value = "auto"; };
+$("ex2").onclick = e => { e.preventDefault(); setMode("paste"); $("seq").value = EX_SITES; };
 $("clear").onclick = () => { $("seq").value = ""; fileText = ""; $("fname").textContent = ""; $("file").value = ""; $("results").innerHTML = ""; $("err").style.display = "none"; };
 function showErr(m) { $("err").textContent = m; $("err").style.display = "block"; }
 
@@ -375,7 +349,7 @@ $("run").onclick = async () => {
   $("run").disabled = true; $("spin").style.display = "inline-block"; $("runtxt").textContent = "Running…";
   try {
     const r = await fetch("predict", {method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({sequences: text, species: document.querySelector("input[name=sp]:checked").value, mode: $("mode").value, threshold: $("thr").value})});
+      body: JSON.stringify({sequences: text, species: document.querySelector("input[name=sp]:checked").value, mode: "site", threshold: $("thr").value})});
     let d; try { d = await r.json(); } catch { throw new Error(`server error (${r.status})`); }
     if (!r.ok) throw new Error(d.error || "prediction failed");
     render(d); $("results").scrollIntoView({behavior: "smooth", block: "start"});
@@ -393,7 +367,7 @@ function render(d) {
       <div class="stats"><div class="stat"><b>${res.n.toLocaleString()}</b><span>cytosines scored</span></div>
       <div class="stat"><b>${res.n_5mC.toLocaleString()}</b><span>predicted 5mC (≥ ${thr})</span></div>
       <div class="stat"><b>${ids.length.toLocaleString()}</b><span>sequences</span></div>
-      <div class="stat"><b>${res.mode === "scan" ? "Scan" : "Site"}</b><span>mode</span></div></div>`;
+      </div>`;
     if (res.mode === "scan") {
       const pick = ids.slice(0, 5);
       html += pick.map(id => track(id, res.rows.filter(r => r[0] === id), ip, thr) + seqView(id, d.sequences[id], res.rows.filter(r => r[0] === id), ip, thr)).join("");
