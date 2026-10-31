@@ -71,30 +71,12 @@ Per species, the ensemble combines five models, with weights chosen to minimise 
 Ensemble weights (`models/<species>/ensemble_weights.json`): O. rufipogon: DNABERT 0.68, BiLSTM 0.23, LightGBM 0.10;
 Ae. tauschii: DNABERT 0.62, BiLSTM 0.28, XGBoost 0.10. Random Forest received weight 0 in both.
 
-## Performance (independent, cluster-disjoint test set)
-| Species | Model | ACC | Sn | Sp | MCC | AUROC | AUPRC |
-|---|---|---|---|---|---|---|---|
-| O. rufipogon | Random Forest | 0.804 | 0.830 | 0.779 | 0.609 | 0.887 | 0.883 |
-| | XGBoost | 0.816 | 0.824 | 0.807 | 0.632 | 0.899 | 0.899 |
-| | LightGBM | 0.815 | 0.825 | 0.806 | 0.630 | 0.899 | 0.899 |
-| | DNABERT | 0.833 | 0.813 | 0.852 | 0.666 | 0.918 | 0.916 |
-| | DNABERT-BiLSTM | 0.818 | 0.799 | 0.838 | 0.637 | 0.906 | 0.904 |
-| | **Ensemble** | **0.835** | 0.819 | 0.852 | **0.671** | **0.920** | **0.918** |
-| Ae. tauschii | Random Forest | 0.713 | 0.710 | 0.717 | 0.426 | 0.792 | 0.803 |
-| | XGBoost | 0.722 | 0.704 | 0.740 | 0.445 | 0.805 | 0.816 |
-| | LightGBM | 0.723 | 0.706 | 0.740 | 0.446 | 0.805 | 0.816 |
-| | DNABERT | 0.745 | 0.737 | 0.754 | 0.491 | 0.836 | 0.843 |
-| | DNABERT-BiLSTM | 0.737 | 0.727 | 0.748 | 0.474 | 0.821 | 0.831 |
-| | **Ensemble** | **0.750** | 0.740 | 0.760 | **0.500** | **0.840** | **0.848** |
-
-Test sets: O. rufipogon 9,868 + 9,868, Ae. tauschii 8,041 + 8,041 (5mC + negative). Per-context results: `models/<species>/test_metrics.csv`.
-
 ## Training data
 - Positives: experimental 5mC sites from bisulfite sequencing (2 samples per species; binomial p < 0.01, methylation level ≥ 0.5, coverage ≥ 5).
 - Negatives: 41-bp CDS windows with a C at the centre and a CHG motif, < 60% identity, no methylated read at that C.
 - Split: CD-HIT-EST 80% cluster-disjoint train/test; no test sequence ≥ 80% identical to a training sequence.
 
 ## Limitations
-- Negatives come from coding sequences, so predictions partly reflect coding vs non-coding sequence composition (GC content alone gives AUROC 0.81 in O. rufipogon). Scores are most reliable for genomic sequence of the matching species; unusual sequences (e.g. low-complexity repeats) can receive high scores.
+- Negatives come from coding sequences, so predictions partly reflect coding vs non-coding sequence composition. Scores are most reliable for genomic sequence of the matching species; unusual sequences (e.g. low-complexity repeats) can receive high scores.
 - Predictions are not experimental measurements and must not be used as methylation labels.
 - No 6mA prediction: no experimental 6mA data exist for these species.
